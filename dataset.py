@@ -22,7 +22,7 @@ import tensorflow as tf
 FLAGS = tf.app.flags.FLAGS
 
 # Basic model parameters.
-tf.app.flags.DEFINE_string('data_dir', '/tmp/mydata',
+tf.app.flags.DEFINE_string('data_dir', '/Volumes/passport/datasets/action_LCA/video_data/sharded_data',
                            """Path to the processed data, i.e. """
                            """TFRecord of Example protos.""")
 

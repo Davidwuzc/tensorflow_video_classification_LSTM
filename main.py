@@ -22,7 +22,6 @@ def main(_):
     # writer for tensorboard visualization
     writer = tf.train.SummaryWriter(
       "summary/train",
-      #graph=sess.graph.as_graph_def(add_shapes=True))
       graph=sess.graph)
     # start all the queue thread
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)

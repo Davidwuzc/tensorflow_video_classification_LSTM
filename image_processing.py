@@ -25,13 +25,13 @@
 
  -- Data processing:
  parse_example_proto: Parses an Example proto containing a training example
-   of an image.
+   of a video.
 
  -- Image decoding:
  decode_jpeg: Decode a JPEG encoded string into a 3-D float32 Tensor.
 
  -- Image preprocessing:
- image_preprocessing: Decode and preprocess one image for evaluation or training
+ video_preprocessing: Decode and preprocess one video for evaluation or training
  distort_image: Distort one image for training a network.
  eval_image: Prepare one image for evaluation.
  distort_color: Distort the color in one image for training.
@@ -65,7 +65,8 @@ tf.app.flags.DEFINE_integer('input_queue_memory_factor', 16,
                             """Default is ideal but try smaller values, e.g. """
                             """4, 2 or 1, if host memory is constrained. See """
                             """comments in code for more details.""")
-
+tf.app.flags.DEFINE_integer('sequence_size', 40, 
+                            """ Size of the images size in one example proto""")
 
 def inputs(dataset, batch_size=None, num_preprocess_threads=None):
   """Generate batches of images for evaluation.
@@ -82,8 +83,8 @@ def inputs(dataset, batch_size=None, num_preprocess_threads=None):
       None defaults to FLAGS.num_preprocess_threads.
 
   Returns:
-    images: Images. 4D tensor of size [batch_size, FLAGS.image_size,
-                                       image_size, 3].
+    videos: Videos. 5D tensor of size [batch_size, sequence_size,
+                                        FLAGS.image_size, image_size, 3].
     labels: 1-D integer Tensor of [FLAGS.batch_size].
     filenames: 1-D integer Tensor of [FLAGS.batch_size].
   """
@@ -294,11 +295,12 @@ def eval_image(image, height, width, scope=None):
     return image
 
 
-def image_preprocessing(image_buffer, bbox, train, thread_id=0):
-  """Decode and preprocess one image for evaluation or training.
+def video_preprocessing(image_features, bbox, train, thread_id=0):
+  """Decode and preprocess one video for evaluation or training.
 
   Args:
-    image_buffer: JPEG encoded string Tensor
+    image_features: dictionary contains, Tensor tf.string containing the 
+      contents of all the JPEG file of a video.
     bbox: 3-D float Tensor of bounding boxes arranged [1, num_boxes, coords]
       where each coordinate is [0, 1) and the coordinates are arranged as
       [ymin, xmin, ymax, xmax].
@@ -306,7 +308,8 @@ def image_preprocessing(image_buffer, bbox, train, thread_id=0):
     thread_id: integer indicating preprocessing thread
 
   Returns:
-    3-D float Tensor containing an appropriately scaled image
+    resutl: 4-D float Tensor containing an appropriately list of scaled image
+      [sequence_length, image_column, image_row, image_channel]
 
   Raises:
     ValueError: if user does not provide bounding box
@@ -314,19 +317,33 @@ def image_preprocessing(image_buffer, bbox, train, thread_id=0):
   if bbox is None:
     raise ValueError('Please supply a bounding box.')
 
-  image = decode_jpeg(image_buffer)
+  # convert the image_features dictionary to decoded images array
+  images = []
+  for key, value in image_features.items():
+    image_features[int(key[-3:])] = image_features[key]
+    del image_features[key]
+  for index in xrange(len(image_features)):
+    images.append(decode_jpeg(image_features[index]))
+
   height = FLAGS.image_size
   width = FLAGS.image_size
 
-  if train:
-    image = distort_image(image, height, width, bbox, thread_id)
-  else:
-    image = eval_image(image, height, width)
+  for idx, image in enumerate(images):
+    if train:
+      image = distort_image(image, height, width, bbox, thread_id)
+    else:
+      image = eval_image(image, height, width)
 
-  # Finally, rescale to [-1,1] instead of [0, 1)
-  image = tf.sub(image, 0.5)
-  image = tf.mul(image, 2.0)
-  return image
+    # Finally, rescale to [-1,1] instead of [0, 1)
+    images[idx] = tf.sub(image, 0.5)
+    images[idx] = tf.mul(image, 2.0)
+
+  # transfer the images list into a tensor
+  for idx, image in enumerate(images):
+    images[idx] = tf.expand_dims(image, 0)
+  result = tf.concat(0, images)
+
+  return result
 
 
 def parse_example_proto(example_serialized):
@@ -350,14 +367,18 @@ def parse_example_proto(example_serialized):
     image/object/bbox/label: 615
     image/format: 'JPEG'
     image/filename: 'ILSVRC2012_val_00041207.JPEG'
-    image/encoded: <JPEG encoded string>
+    raw/image/001: <JPEG encoded string>
+    ...
+    raw/image/n: <JPEG encoded string>
+    raw/frame/number: 40
 
   Args:
     example_serialized: scalar Tensor tf.string containing a serialized
       Example protocol buffer.
 
   Returns:
-    image_buffer: Tensor tf.string containing the contents of a JPEG file.
+    image_features: dictionary contains, Tensor tf.string containing the 
+      contents of all the JPEG file of a video.
     label: Tensor tf.int32 containing the label.
     bbox: 3-D float Tensor of bounding boxes arranged [1, num_boxes, coords]
       where each coordinate is [0, 1) and the coordinates are arranged as
@@ -367,8 +388,8 @@ def parse_example_proto(example_serialized):
   """
   # Dense features in Example proto.
   feature_map = {
-      'image/encoded': tf.FixedLenFeature([], dtype=tf.string,
-                                          default_value=''),
+      'raw/frame/number': tf.FixedLenFeature([1], dtype=tf.int64,
+                                              default_value=0),
       'image/class/label': tf.FixedLenFeature([1], dtype=tf.int64,
                                               default_value=-1),
       'image/class/text': tf.FixedLenFeature([], dtype=tf.string,
@@ -400,7 +421,15 @@ def parse_example_proto(example_serialized):
   bbox = tf.expand_dims(bbox, 0)
   bbox = tf.transpose(bbox, [0, 2, 1])
 
-  return (features['image/encoded'],
+  # images data in the Example proto
+  image_map = {}
+  for index in xrange(FLAGS.sequence_size):
+    image_map['raw/image/%03d' % index] = tf.FixedLenFeature([], 
+                                                            dtype=tf.string,
+                                                            default_value='')
+  image_features = tf.parse_single_example(example_serialized, image_map) 
+
+  return (image_features,
           label,
           bbox,
           features['image/class/text'],
@@ -420,7 +449,7 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None,
     num_readers: integer, number of parallel readers
 
   Returns:
-    images: 4-D float Tensor of a batch of images
+    videos: 5-D float Tensor of a batch of videos
     labels: 1-D integer Tensor of [batch_size].
     filenames: an array contains all the filenames
 
@@ -487,16 +516,16 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None,
       reader = dataset.reader()
       _, example_serialized = reader.read(filename_queue)
 
-    images_and_labels = []
+    videos_and_labels = []
     for thread_id in range(num_preprocess_threads):
       # Parse a serialized Example proto to extract the image and metadata.
-      image_buffer, label_index, bbox, _, filename = parse_example_proto(
+      image_features, label_index, bbox, _, filename = parse_example_proto(
           example_serialized)
-      image = image_preprocessing(image_buffer, bbox, train, thread_id)
-      images_and_labels.append([image, label_index, filename])
+      video = video_preprocessing(image_features, bbox, train, thread_id)
+      videos_and_labels.append([video, label_index, filename])
 
-    images, label_index_batch, filename_batch = tf.train.batch_join(
-        images_and_labels,
+    videos, label_index_batch, filename_batch = tf.train.batch_join(
+        videos_and_labels,
         batch_size=batch_size,
         capacity=2 * num_preprocess_threads * batch_size)
 
@@ -505,12 +534,15 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None,
     width = FLAGS.image_size
     depth = 3
 
-    images = tf.cast(images, tf.float32)
-    images = tf.reshape(images, shape=[batch_size, height, width, depth])
+    videos = tf.cast(videos, tf.float32)
+    videos = tf.reshape(videos, shape=[batch_size, FLAGS.sequence_size, 
+                                        height, width, depth])
 
     # Display the training images in the visualizer.
-    tf.image_summary('images', images)
+    images = tf.reshape(videos, shape=[batch_size*FLAGS.sequence_size, 
+                                       height, width, depth])
+    tf.image_summary('images', images, max_images=10)
 
-    return (images, 
+    return (videos, 
             tf.reshape(label_index_batch, [batch_size]),
             tf.reshape(filename_batch, [batch_size]))

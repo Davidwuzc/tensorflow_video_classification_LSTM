@@ -75,7 +75,7 @@ tf.app.flags.DEFINE_string('train_directory', '/Volumes/passport/datasets/action
                            'Training data directory')
 tf.app.flags.DEFINE_string('validation_directory', '/Volumes/passport/datasets/action_LCA/video_data/validation_data',
                            'Validation data directory')
-tf.app.flags.DEFINE_string('output_directory', '/Users/dgu/Desktop/sharded_data',
+tf.app.flags.DEFINE_string('output_directory', '/Volumes/passport/datasets/action_LCA/video_data/sharded_data',
                            'Output data directory')
 
 tf.app.flags.DEFINE_integer('train_shards', 64,
@@ -136,7 +136,7 @@ def _convert_to_example(foldername, images_buffer, label, text, height, width):
   # create the feature data for the TFRecord example
   images = {}
   for index, image in enumerate(images_buffer):
-    images['raw/image/%s' % index] = _bytes_feature(image)
+    images['raw/image/%03d' % index] = _bytes_feature(image)
 
   feature_dict = {
     'image/height': _int64_feature(height),
