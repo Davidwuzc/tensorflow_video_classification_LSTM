@@ -78,7 +78,7 @@ def inputs(dataset, batch_size=None, num_preprocess_threads=None):
 
   Args:
     dataset: instance of Dataset class specifying the dataset.
-    batch_size: integer, number of examples in batch
+    batch_size: integer, number of examples in batch, default value is 10
     num_preprocess_threads: integer, total number of preprocessing threads but
       None defaults to FLAGS.num_preprocess_threads.
 
@@ -543,6 +543,10 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None,
                                        height, width, depth])
     tf.image_summary('images', images, max_images=10)
 
+    # conver the label to one hot vector
+    labels = tf.reshape(label_index_batch, [batch_size])
+    labels_one_hot = tf.one_hot(labels, dataset.num_classes(), 1, 0)
+
     return (videos, 
-            tf.reshape(label_index_batch, [batch_size]),
+            labels_one_hot,
             tf.reshape(filename_batch, [batch_size]))

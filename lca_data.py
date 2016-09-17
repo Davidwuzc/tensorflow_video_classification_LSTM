@@ -8,14 +8,14 @@ class LCAData(Dataset):
 
   def num_classes(self):
     """Returns the number of classes in the data set."""
-    return 1
+    return 24
 
   def num_examples_per_epoch(self):
     """Returns the number of examples in the data subset."""
     if self.subset == 'train':
-      return 25
+      return 4000
     if self.subset == 'validation':
-      return 25
+      return 400
 
   def download_message(self):
     """Instruction to download and extract the tarball from Flowers website."""

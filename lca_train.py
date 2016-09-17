@@ -18,24 +18,20 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-
-
 import tensorflow as tf
 
-from inception import inception_train
-from inception.imagenet_data import ImagenetData
+import lstm_train
+from lca_data import LCAData
 
 FLAGS = tf.app.flags.FLAGS
 
-
 def main(_):
-  dataset = ImagenetData(subset=FLAGS.subset)
-  assert dataset.data_files()
+  train_dataset = LCAData('train')
+  assert train_dataset.data_files()
   if tf.gfile.Exists(FLAGS.train_dir):
     tf.gfile.DeleteRecursively(FLAGS.train_dir)
   tf.gfile.MakeDirs(FLAGS.train_dir)
-  inception_train.train(dataset)
-
+  lstm_train.train(train_dataset)
 
 if __name__ == '__main__':
   tf.app.run()
