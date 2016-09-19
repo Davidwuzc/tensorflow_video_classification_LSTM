@@ -20,7 +20,7 @@ class SmallConfig(object):
   learning_rate = 0.1
   training_iters = 100
   batch_size = 10
-  display_step = 10
+  display_step = 1
   row = 299
   column = 299
   channel = 3
@@ -109,20 +109,22 @@ def train(dataset):
   
   # coordinator for controlling queue threads
   coord = tf.train.Coordinator()
-    
+
   # Launch the graph
   with tf.Session() as sess:
     sess.run(init)
     step = 1
+
+    # initialize the image and label operator
+    images_op, labels_op, _ = image_processing.inputs(
+      dataset,
+      batch_size=config.batch_size)
+
+    # start all the queue thread
+    threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+
     # Keep training until reach max iterations
     while step * config.batch_size < config.training_iters:
-      # initialize the image and label operator
-      images_op, labels_op, _ = image_processing.inputs(
-        dataset,
-        batch_size=config.batch_size)
-
-      # start all the queue thread
-      threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
       # get the image and label data
       images, labels = sess.run([images_op, labels_op])
@@ -130,14 +132,19 @@ def train(dataset):
       # run the optimizer 
       sess.run(optimizer, feed_dict={x: images, y: labels})
 
-      if step % display_step == 0:
+      if step % config.display_step == 0:
         # Calculate batch accuracy
         acc = sess.run(accuracy, feed_dict={x: images, y: labels})
         # Calculate batch loss
         loss = sess.run(cost, feed_dict={x: images, y: labels})
-        print("Iter " + str(step*batch_size) + ", Minibatch Loss= " + \
+        print("Iter " + str(step*config.batch_size) + ", Minibatch Loss= " + \
           "{:.6f}".format(loss) + ", Training Accuracy= " + \
           "{:.5f}".format(acc))
       step += 1
+
+    # request to stop the input queue
+    coord.request_stop()
+    # Wait for threads to finish.
+    coord.join(threads)
 
     print("Optimization Finished!")

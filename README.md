@@ -1,21 +1,29 @@
-# First: How to use the `convert_to_records.py` program
+# Data preprocessing
+
+How to use `convert_to_records.py` program
 
 example usage (only compatible with python 2.x): 
 ```
 python convert_to_records.py
-    --train_directory=/Users/dgu/Documents/projects/tensorflow/rnn/data
-    --validation_directory=/Users/dgu/Documents/projects/tensorflow/rnn/data
-    --output_directory=/Users/dgu/Documents/projects/tensorflow/rnn/data
-    --labels_file=/Users/dgu/Documents/projects/tensorflow/rnn/data/label 
+    --train_directory=/path/to/folder/../data
+    --validation_directory=/path/to/folder/../data
+    --output_directory=/path/to/folder/../data
+    --labels_file=/path/to/file/../data/label 
 ```
 
-**origin file link**: https://github.com/tensorflow/models/blob/master/inception/inception/data/build_image_data.py
+[**origin file link**](https://github.com/tensorflow/models/blob/master/inception/inception/data/build_image_data.py)
 
-**reference link** for how to write data to tfrecord and read data from tfrecord:
-https://www.tensorflow.org/versions/r0.10/how_tos/reading_data/index.html#file-formats
+[**reference link**](https://www.tensorflow.org/versions/r0.10/how_tos/reading_data/index.html#file-formats) for how to write data to tfrecord and read data from tfrecord:
 
-# Second: How to run the training program
 
-`python -B main_train.py --data_dir=/Users/dgu/Documents/projects/tensorflow/rnn/data/sharded_data`
+# How to run the test program
 
-This command will run the training subset by default
+`python -B main_train.py --data_dir=/path/to/folder/../data/sharded_data`
+
+# Run the LCA training program
+
+`python -B lca_train.py --data_dir=/path/to/folder/../data/sharded_data`
+
+# Start the `TensorBoard` to monitor the status
+
+`tensorboard --logdir=/path/to/folder/../summary`
