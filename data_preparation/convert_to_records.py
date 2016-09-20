@@ -85,7 +85,7 @@ tf.app.flags.DEFINE_integer('validation_shards', 8,
 
 tf.app.flags.DEFINE_integer('num_threads', 4,
                             'Number of threads to preprocess the images.')
-tf.app.flags.DEFINE_boolean('sequence_random', False,
+tf.app.flags.DEFINE_boolean('sequence_random', True,
                             'Determine whether to shuffle the image order or not.')
 # The labels file contains a list of valid labels are held in this file.
 # Assumes that the file contains entries as such:
@@ -215,7 +215,7 @@ def _process_image(foldername, coder):
     image_data = tf.gfile.FastGFile(filename, 'r').read()
     # Convert any PNG to JPEG's for consistency.
     if _is_png(filename):
-      print('Converting PNG to JPEG for %s' % filename)
+      # print('Converting PNG to JPEG for %s' % filename)
       image_data = coder.png_to_jpeg(image_data)
     # Decode the RGB JPEG.
     image = coder.decode_jpeg(image_data)

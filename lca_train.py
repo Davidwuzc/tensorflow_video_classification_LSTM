@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""A binary to train Inception on the ImageNet data set.
+"""A binary to train BiLSTM on the LCA data set.
 """
 from __future__ import absolute_import
 from __future__ import division

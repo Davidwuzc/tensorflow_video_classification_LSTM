@@ -32,9 +32,7 @@
 
  -- Image preprocessing:
  video_preprocessing: Decode and preprocess one video for evaluation or training
- distort_image: Distort one image for training a network.
- eval_image: Prepare one image for evaluation.
- distort_color: Distort the color in one image for training.
+ pre_image: Prepare one image.
 """
 import tensorflow as tf
 
@@ -47,8 +45,6 @@ tf.app.flags.DEFINE_integer('image_size', 299,
 tf.app.flags.DEFINE_integer('num_preprocess_threads', 4,
                             """Number of preprocessing threads per tower. """
                             """Please make this a multiple of 4.""")
-tf.app.flags.DEFINE_integer('num_readers', 4,
-                            """Number of parallel readers during train.""")
 
 # Images are preprocessed asynchronously using multiple threads specified by
 # --num_preprocss_threads and the resulting processed images are stored in a
@@ -84,7 +80,7 @@ def inputs(dataset, batch_size=None, num_preprocess_threads=None):
 
   Returns:
     videos: Videos. 5D tensor of size [batch_size, sequence_size,
-                                        FLAGS.image_size, image_size, 3].
+                                        row, column, 3].
     labels: 1-D integer Tensor of [FLAGS.batch_size].
     filenames: 1-D integer Tensor of [FLAGS.batch_size].
   """
@@ -96,8 +92,7 @@ def inputs(dataset, batch_size=None, num_preprocess_threads=None):
   with tf.device('/cpu:0'):
     images, labels, filenames = batch_inputs(
         dataset, batch_size, train=False,
-        num_preprocess_threads=num_preprocess_threads,
-        num_readers=1)
+        num_preprocess_threads=num_preprocess_threads)
 
   return images, labels, filenames
 
@@ -120,18 +115,18 @@ def distorted_inputs(dataset, batch_size=None, num_preprocess_threads=None):
   Returns:
     images: Images. 4D tensor of size [batch_size, FLAGS.image_size,
                                        FLAGS.image_size, 3].
-    labels: 1-D integer Tensor of [batch_size].
+    labels: 1-D integer one host Tensor of [batch_size].
+    filenames: 1-D integer Tensor of [FLAGS.batch_size].
   """
   if not batch_size:
     batch_size = FLAGS.batch_size
 
   # Force all input processing onto CPU in order to reserve the GPU for
   # the forward inference and back-propagation.
-  images, labels, _ = batch_inputs(
+  images, labels_one_hot, filenames = batch_inputs(
       dataset, batch_size, train=True,
-      num_preprocess_threads=num_preprocess_threads,
-      num_readers=FLAGS.num_readers)
-  return images, labels
+      num_preprocess_threads=num_preprocess_threads)
+  return images, labels_one_hot, filenames
 
 
 def decode_jpeg(image_buffer, scope=None):
@@ -157,122 +152,8 @@ def decode_jpeg(image_buffer, scope=None):
     return image
 
 
-def distort_color(image, thread_id=0, scope=None):
-  """Distort the color of the image.
-
-  Each color distortion is non-commutative and thus ordering of the color ops
-  matters. Ideally we would randomly permute the ordering of the color ops.
-  Rather then adding that level of complication, we select a distinct ordering
-  of color ops for each preprocessing thread.
-
-  Args:
-    image: Tensor containing single image.
-    thread_id: preprocessing thread ID.
-    scope: Optional scope for op_scope.
-  Returns:
-    color-distorted image
-  """
-  with tf.op_scope([image], scope, 'distort_color'):
-    color_ordering = thread_id % 2
-
-    if color_ordering == 0:
-      image = tf.image.random_brightness(image, max_delta=32. / 255.)
-      image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
-      image = tf.image.random_hue(image, max_delta=0.2)
-      image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
-    elif color_ordering == 1:
-      image = tf.image.random_brightness(image, max_delta=32. / 255.)
-      image = tf.image.random_contrast(image, lower=0.5, upper=1.5)
-      image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
-      image = tf.image.random_hue(image, max_delta=0.2)
-
-    # The random_* ops do not necessarily clamp.
-    image = tf.clip_by_value(image, 0.0, 1.0)
-    return image
-
-
-def distort_image(image, height, width, bbox, thread_id=0, scope=None):
-  """Distort one image for training a network.
-
-  Distorting images provides a useful technique for augmenting the data
-  set during training in order to make the network invariant to aspects
-  of the image that do not effect the label.
-
-  Args:
-    image: 3-D float Tensor of image
-    height: integer
-    width: integer
-    bbox: 3-D float Tensor of bounding boxes arranged [1, num_boxes, coords]
-      where each coordinate is [0, 1) and the coordinates are arranged
-      as [ymin, xmin, ymax, xmax].
-    thread_id: integer indicating the preprocessing thread.
-    scope: Optional scope for op_scope.
-  Returns:
-    3-D float Tensor of distorted image used for training.
-  """
-  with tf.op_scope([image, height, width, bbox], scope, 'distort_image'):
-    # Each bounding box has shape [1, num_boxes, box coords] and
-    # the coordinates are ordered [ymin, xmin, ymax, xmax].
-
-    # Display the bounding box in the first thread only.
-    if not thread_id:
-      image_with_box = tf.image.draw_bounding_boxes(tf.expand_dims(image, 0),
-                                                    bbox)
-      tf.image_summary('image_with_bounding_boxes', image_with_box)
-
-  # A large fraction of image datasets contain a human-annotated bounding
-  # box delineating the region of the image containing the object of interest.
-  # We choose to create a new bounding box for the object which is a randomly
-  # distorted version of the human-annotated bounding box that obeys an allowed
-  # range of aspect ratios, sizes and overlap with the human-annotated
-  # bounding box. If no box is supplied, then we assume the bounding box is
-  # the entire image.
-    sample_distorted_bounding_box = tf.image.sample_distorted_bounding_box(
-        tf.shape(image),
-        bounding_boxes=bbox,
-        min_object_covered=0.1,
-        aspect_ratio_range=[0.75, 1.33],
-        area_range=[0.05, 1.0],
-        max_attempts=100,
-        use_image_if_no_bounding_boxes=True)
-    bbox_begin, bbox_size, distort_bbox = sample_distorted_bounding_box
-    if not thread_id:
-      image_with_distorted_box = tf.image.draw_bounding_boxes(
-          tf.expand_dims(image, 0), distort_bbox)
-      tf.image_summary('images_with_distorted_bounding_box',
-                       image_with_distorted_box)
-
-    # Crop the image to the specified bounding box.
-    distorted_image = tf.slice(image, bbox_begin, bbox_size)
-
-    # This resizing operation may distort the images because the aspect
-    # ratio is not respected. We select a resize method in a round robin
-    # fashion based on the thread number.
-    # Note that ResizeMethod contains 4 enumerated resizing methods.
-    resize_method = thread_id % 4
-    distorted_image = tf.image.resize_images(distorted_image, height, width,
-                                             resize_method)
-    # Restore the shape since the dynamic slice based upon the bbox_size loses
-    # the third dimension.
-    distorted_image.set_shape([height, width, 3])
-    if not thread_id:
-      tf.image_summary('cropped_resized_image',
-                       tf.expand_dims(distorted_image, 0))
-
-    # Randomly flip the image horizontally.
-    distorted_image = tf.image.random_flip_left_right(distorted_image)
-
-    # Randomly distort the colors.
-    distorted_image = distort_color(distorted_image, thread_id)
-
-    if not thread_id:
-      tf.image_summary('final_distorted_image',
-                       tf.expand_dims(distorted_image, 0))
-    return distorted_image
-
-
-def eval_image(image, height, width, scope=None):
-  """Prepare one image for evaluation.
+def pre_image(image, height, width, scope=None):
+  """Prepare one image.
 
   Args:
     image: 3-D float Tensor
@@ -282,7 +163,7 @@ def eval_image(image, height, width, scope=None):
   Returns:
     3-D float Tensor of prepared image.
   """
-  with tf.op_scope([image, height, width], scope, 'eval_image'):
+  with tf.op_scope([image, height, width], scope, 'pre_image'):
     # Crop the central region of the image with an area containing 87.5% of
     # the original image.
     image = tf.image.central_crop(image, central_fraction=0.875)
@@ -295,27 +176,22 @@ def eval_image(image, height, width, scope=None):
     return image
 
 
-def video_preprocessing(image_features, bbox, train, thread_id=0):
+def video_preprocessing(image_features, train, thread_id=0):
   """Decode and preprocess one video for evaluation or training.
 
   Args:
     image_features: dictionary contains, Tensor tf.string containing the 
       contents of all the JPEG file of a video.
-    bbox: 3-D float Tensor of bounding boxes arranged [1, num_boxes, coords]
-      where each coordinate is [0, 1) and the coordinates are arranged as
-      [ymin, xmin, ymax, xmax].
     train: boolean
     thread_id: integer indicating preprocessing thread
 
   Returns:
     resutl: 4-D float Tensor containing an appropriately list of scaled image
-      [sequence_length, image_column, image_row, image_channel]
+      [sequence_length, row, column, image_channel]
 
   Raises:
     ValueError: if user does not provide bounding box
   """
-  if bbox is None:
-    raise ValueError('Please supply a bounding box.')
 
   # convert the image_features dictionary to decoded images array
   images = []
@@ -329,10 +205,7 @@ def video_preprocessing(image_features, bbox, train, thread_id=0):
   width = FLAGS.image_size
 
   for idx, image in enumerate(images):
-    if train:
-      image = distort_image(image, height, width, bbox, thread_id)
-    else:
-      image = eval_image(image, height, width)
+    image = pre_image(image, height, width)
 
     # Finally, rescale to [-1,1] instead of [0, 1)
     images[idx] = tf.sub(image, 0.5)
@@ -360,17 +233,11 @@ def parse_example_proto(example_serialized):
     image/class/label: 615
     image/class/synset: 'n03623198'
     image/class/text: 'knee pad'
-    image/object/bbox/xmin: 0.1
-    image/object/bbox/xmax: 0.9
-    image/object/bbox/ymin: 0.2
-    image/object/bbox/ymax: 0.6
-    image/object/bbox/label: 615
     image/format: 'JPEG'
     image/filename: 'ILSVRC2012_val_00041207.JPEG'
     raw/image/001: <JPEG encoded string>
     ...
     raw/image/n: <JPEG encoded string>
-    raw/frame/number: 40
 
   Args:
     example_serialized: scalar Tensor tf.string containing a serialized
@@ -380,16 +247,11 @@ def parse_example_proto(example_serialized):
     image_features: dictionary contains, Tensor tf.string containing the 
       contents of all the JPEG file of a video.
     label: Tensor tf.int32 containing the label.
-    bbox: 3-D float Tensor of bounding boxes arranged [1, num_boxes, coords]
-      where each coordinate is [0, 1) and the coordinates are arranged as
-      [ymin, xmin, ymax, xmax].
     text: Tensor tf.string containing the human-readable label.
     filename: the filename of the image
   """
   # Dense features in Example proto.
   feature_map = {
-      'raw/frame/number': tf.FixedLenFeature([1], dtype=tf.int64,
-                                              default_value=0),
       'image/class/label': tf.FixedLenFeature([1], dtype=tf.int64,
                                               default_value=-1),
       'image/class/text': tf.FixedLenFeature([], dtype=tf.string,
@@ -397,29 +259,11 @@ def parse_example_proto(example_serialized):
       'image/filename': tf.FixedLenFeature([], dtype=tf.string,
                                              default_value='')
   }
-  sparse_float32 = tf.VarLenFeature(dtype=tf.float32)
-  # Sparse features in Example proto.
-  feature_map.update(
-      {k: sparse_float32 for k in ['image/object/bbox/xmin',
-                                   'image/object/bbox/ymin',
-                                   'image/object/bbox/xmax',
-                                   'image/object/bbox/ymax']})
-
   features = tf.parse_single_example(example_serialized, feature_map)
   label = tf.cast(features['image/class/label'], dtype=tf.int32)
-
-  xmin = tf.expand_dims(features['image/object/bbox/xmin'].values, 0)
-  ymin = tf.expand_dims(features['image/object/bbox/ymin'].values, 0)
-  xmax = tf.expand_dims(features['image/object/bbox/xmax'].values, 0)
-  ymax = tf.expand_dims(features['image/object/bbox/ymax'].values, 0)
-
-  # Note that we impose an ordering of (y, x) just to make life difficult.
-  bbox = tf.concat(0, [ymin, xmin, ymax, xmax])
-
-  # Force the variable number of bounding boxes into the shape
-  # [1, num_boxes, coords].
-  bbox = tf.expand_dims(bbox, 0)
-  bbox = tf.transpose(bbox, [0, 2, 1])
+  # subtract the label value by 1, becuae the previous label value range
+  #  from(1..n)
+  label = tf.sub(label, tf.constant(1))
 
   # images data in the Example proto
   image_map = {}
@@ -431,13 +275,11 @@ def parse_example_proto(example_serialized):
 
   return (image_features,
           label,
-          bbox,
           features['image/class/text'],
           features['image/filename'])
 
 
-def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None,
-                 num_readers=1):
+def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None):
   """Contruct batches of training or evaluation examples from the image dataset.
 
   Args:
@@ -446,7 +288,6 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None,
     batch_size: integer
     train: boolean
     num_preprocess_threads: integer, total number of preprocessing threads
-    num_readers: integer, number of parallel readers
 
   Returns:
     videos: 5-D float Tensor of a batch of videos
@@ -477,12 +318,6 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None,
       raise ValueError('Please make num_preprocess_threads a multiple '
                        'of 4 (%d % 4 != 0).', num_preprocess_threads)
 
-    if num_readers is None:
-      num_readers = FLAGS.num_readers
-
-    if num_readers < 1:
-      raise ValueError('Please make num_readers at least 1')
-
     # Approximate number of examples per shard.
     examples_per_shard = 25
     # Size the random shuffle queue to balance between good global
@@ -501,31 +336,19 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None,
           capacity=examples_per_shard + 3 * batch_size,
           dtypes=[tf.string])
 
-    # Create multiple readers to populate the queue of examples.
-    if num_readers > 1:
-      enqueue_ops = []
-      for _ in range(num_readers):
-        reader = dataset.reader()
-        _, value = reader.read(filename_queue)
-        enqueue_ops.append(examples_queue.enqueue([value]))
+    reader = dataset.reader()
+    _, example_serialized = reader.read(filename_queue)
 
-      tf.train.queue_runner.add_queue_runner(
-          tf.train.queue_runner.QueueRunner(examples_queue, enqueue_ops))
-      example_serialized = examples_queue.dequeue()
-    else:
-      reader = dataset.reader()
-      _, example_serialized = reader.read(filename_queue)
-
-    videos_and_labels = []
+    videos_and_labels_and_filenames = []
     for thread_id in range(num_preprocess_threads):
       # Parse a serialized Example proto to extract the image and metadata.
-      image_features, label_index, bbox, _, filename = parse_example_proto(
+      image_features, label_index, _, filename = parse_example_proto(
           example_serialized)
-      video = video_preprocessing(image_features, bbox, train, thread_id)
-      videos_and_labels.append([video, label_index, filename])
+      video = video_preprocessing(image_features, train, thread_id)
+      videos_and_labels_and_filenames.append([video, label_index, filename])
 
     videos, label_index_batch, filename_batch = tf.train.batch_join(
-        videos_and_labels,
+        videos_and_labels_and_filenames,
         batch_size=batch_size,
         capacity=2 * num_preprocess_threads * batch_size)
 
@@ -538,12 +361,12 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None,
     videos = tf.reshape(videos, shape=[batch_size, FLAGS.sequence_size, 
                                         height, width, depth])
 
-    # Display the training images in the visualizer.
+    # Display the sample training images in the visualizer.
     images = tf.reshape(videos, shape=[batch_size*FLAGS.sequence_size, 
                                        height, width, depth])
     tf.image_summary('images', images, max_images=10)
 
-    # conver the label to one hot vector
+    # convert the label to one hot vector
     labels = tf.reshape(label_index_batch, [batch_size])
     labels_one_hot = tf.one_hot(labels, dataset.num_classes(), 1, 0)
 

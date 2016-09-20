@@ -36,8 +36,22 @@ def get_config():
   else:
     raise ValueError("Invalid model: %s", FLAGS.model)
 
-def BiRNN(x, weights, biases, config):
-  """Bidrection recurrent neural network"""
+def BiLSTM(x, weights, biases):
+  """Bidirectional LSTM neural network.
+
+  Use this function to create the nerual network model
+
+  Args:
+    x: a tensor placeholder that represent batches of video
+    weight: variable, all the weight variable of the model
+    biases: variable, all the biases variable of the model
+
+  Returns:
+    pred: tensor. predition value calculated by the lastest model
+  """
+  # get the configuration
+  config = get_config()
+
   # Prepare data shape to match `bidirectional_rnn` function requirements
   # Current data input shape: (batch_size, n_step, n_row, n_column, n_channel)
   # Required shape: 'num_steps' tensors list of shape (batch_size, num_input)
@@ -93,7 +107,7 @@ def train(dataset):
     'out': tf.Variable(tf.random_normal([config.num_classes]))
   }
 
-  pred = BiRNN(x, weights, biases, config)
+  pred = BiLSTM(x, weights, biases)
 
   # Define loss and optimizer
   cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(pred, y))
@@ -110,15 +124,15 @@ def train(dataset):
   # coordinator for controlling queue threads
   coord = tf.train.Coordinator()
 
+  # initialize the image and label operator
+  images_op, labels_op, filenames_op = image_processing.distorted_inputs(
+    dataset,
+    batch_size=config.batch_size)
+
   # Launch the graph
   with tf.Session() as sess:
     sess.run(init)
     step = 1
-
-    # initialize the image and label operator
-    images_op, labels_op, _ = image_processing.inputs(
-      dataset,
-      batch_size=config.batch_size)
 
     # start all the queue thread
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
@@ -127,7 +141,10 @@ def train(dataset):
     while step * config.batch_size < config.training_iters:
 
       # get the image and label data
-      images, labels = sess.run([images_op, labels_op])
+      images, labels, filenames = sess.run([images_op, labels_op, filenames_op])
+
+      print(filenames)
+      print("label one hot {}".format(labels))
 
       # run the optimizer 
       sess.run(optimizer, feed_dict={x: images, y: labels})
