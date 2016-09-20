@@ -1,17 +1,3 @@
-# Copyright 2016 Google Inc. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
 """Read and preprocess image data.
 
  Image processing occurs on a single image at a time. Image are read and
@@ -34,35 +20,14 @@
  video_preprocessing: Decode and preprocess one video for evaluation or training
  pre_image: Prepare one image.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import tensorflow as tf
+import settings
 
 FLAGS = tf.app.flags.FLAGS
-
-tf.app.flags.DEFINE_integer('batch_size', 10,
-                            """Number of images to process in a batch.""")
-tf.app.flags.DEFINE_integer('image_size', 299,
-                            """Provide square images of this size.""")
-tf.app.flags.DEFINE_integer('num_preprocess_threads', 4,
-                            """Number of preprocessing threads per tower. """
-                            """Please make this a multiple of 4.""")
-
-# Images are preprocessed asynchronously using multiple threads specified by
-# --num_preprocss_threads and the resulting processed images are stored in a
-# random shuffling queue. The shuffling queue dequeues --batch_size images
-# for processing on a given Inception tower. A larger shuffling queue guarantees
-# better mixing across examples within a batch and results in slightly higher
-# predictive performance in a trained model. Empirically,
-# --input_queue_memory_factor=16 works well. A value of 16 implies a queue size
-# of 1024*16 images. Assuming RGB 299x299 images, this implies a queue size of
-# 16GB. If the machine is memory limited, then decrease this factor to
-# decrease the CPU memory footprint, accordingly.
-tf.app.flags.DEFINE_integer('input_queue_memory_factor', 16,
-                            """Size of the queue of preprocessed images. """
-                            """Default is ideal but try smaller values, e.g. """
-                            """4, 2 or 1, if host memory is constrained. See """
-                            """comments in code for more details.""")
-tf.app.flags.DEFINE_integer('sequence_size', 40, 
-                            """ Size of the images size in one example proto""")
 
 def inputs(dataset, batch_size=None, num_preprocess_threads=None):
   """Generate batches of images for evaluation.

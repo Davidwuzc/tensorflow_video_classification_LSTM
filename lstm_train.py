@@ -1,34 +1,29 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import tensorflow as tf
 import numpy as np
 
 import image_processing
+import settings
 
 FLAGS = tf.app.flags.FLAGS
-
-tf.app.flags.DEFINE_string(
-  'train_dir', '/Volumes/passport/datasets/action_LCA/video_data/checkpoint',
-  "Directory where to write event logs and checkpoint."
-)
-tf.app.flags.DEFINE_string(
-  'model', 'small',
-  "Model configuration. Possible options are: small, medium, large."
-)
 
 class SmallConfig(object):
   """Small config."""
   # Parameters
   learning_rate = 0.1
   training_iters = 100
-  batch_size = 10
+  batch_size = FLAGS.batch_size
   display_step = 1
-  row = 299
-  column = 299
+  row = FLAGS.image_size
+  column = FLAGS.image_size
   channel = 3
   # Network parameters
   num_input = row * column * channel
-  num_steps = 40
+  num_steps = FLAGS.sequence_size
   num_hidden = 200 # hidden layer number of features
-  num_classes = 24 # total action class
 
 def get_config():
   if FLAGS.model == "small":
@@ -88,6 +83,7 @@ def BiLSTM(x, weights, biases):
 def train(dataset):
   # get the configuration settings
   config = get_config()
+  num_classes = dataset.num_classes()
 
   # tf Graph inputs
   x = tf.placeholder("float", [
@@ -96,15 +92,15 @@ def train(dataset):
     config.row,
     config.column,
     config.channel])
-  y = tf.placeholder("float", [None, config.num_classes])
+  y = tf.placeholder("float", [None, num_classes])
 
   # Define weights
   weights = {
     'out': tf.Variable(tf.random_normal([2*config.num_hidden, 
-                                        config.num_classes]))
+                                        num_classes]))
   }
   biases = {
-    'out': tf.Variable(tf.random_normal([config.num_classes]))
+    'out': tf.Variable(tf.random_normal([num_classes]))
   }
 
   pred = BiLSTM(x, weights, biases)
@@ -142,9 +138,6 @@ def train(dataset):
 
       # get the image and label data
       images, labels, filenames = sess.run([images_op, labels_op, filenames_op])
-
-      print(filenames)
-      print("label one hot {}".format(labels))
 
       # run the optimizer 
       sess.run(optimizer, feed_dict={x: images, y: labels})
