@@ -8,7 +8,7 @@ import tensorflow as tf
 # video parameters
 tf.app.flags.DEFINE_integer('batch_size', 10,
                             """Number of images to process in a batch.""")
-tf.app.flags.DEFINE_integer('image_size', 299,
+tf.app.flags.DEFINE_integer('image_size', 29,
                             """Provide square images of this size.""")
 tf.app.flags.DEFINE_integer('sequence_size', 40, 
                             """ Size of the images size in one example """

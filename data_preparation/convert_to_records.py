@@ -61,6 +61,7 @@ import threading
 import numpy as np
 import tensorflow as tf
 
+
 tf.app.flags.DEFINE_string('train_directory', '/Volumes/passport/datasets/action_LCA/video_data/train_data',
                            'Training data directory')
 tf.app.flags.DEFINE_string('validation_directory', '/Volumes/passport/datasets/action_LCA/video_data/validation_data',
