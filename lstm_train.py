@@ -14,7 +14,7 @@ class SmallConfig(object):
   """Small config."""
   # Parameters
   learning_rate = 0.1
-  training_iters = 100
+  training_iters = 10000
   batch_size = FLAGS.batch_size
   display_step = 1
   row = FLAGS.image_size
@@ -139,7 +139,7 @@ def train(dataset):
     # Keep training until reach max iterations
     while step * config.batch_size < config.training_iters:
       # get the image and label data
-      summary_result, images, labels, filenames = sess.run([
+      summary_result, images, labels, _ = sess.run([
         all_summaries, images_op, 
         labels_op, filenames_op])
       # run the optimizer

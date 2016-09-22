@@ -15,11 +15,6 @@ python convert_to_records.py
 
 [**reference link**](https://www.tensorflow.org/versions/r0.10/how_tos/reading_data/index.html#file-formats) for how to write data to tfrecord and read data from tfrecord:
 
-
-# How to run the test program
-
-`python -B main_train.py --data_dir=/path/to/folder/../data/sharded_data`
-
 # Run the LCA training program
 
 `python -B lca_train.py --data_dir=/path/to/folder/../data/sharded_data`
