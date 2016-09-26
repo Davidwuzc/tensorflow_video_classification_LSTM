@@ -8,8 +8,10 @@ import tensorflow as tf
 # video parameters
 tf.app.flags.DEFINE_integer('batch_size', 10,
                             """Number of images to process in a batch.""")
+
 tf.app.flags.DEFINE_integer('image_size', 29,
                             """Provide square images of this size.""")
+
 tf.app.flags.DEFINE_integer('sequence_size', 40, 
                             """ Size of the images size in one example """
                             """proto""")
@@ -27,14 +29,18 @@ tf.app.flags.DEFINE_integer('input_queue_memory_factor', 16,
                             """details.""")
 
 # training parameters
-tf.app.flags.DEFINE_string('train_dir', '/Volumes/passport/datasets/action_LCA/video_data/checkpoint',
-                            """Directory where to write event logs and""" 
-                            """checkpoint."""
-)
+tf.app.flags.DEFINE_string('train_dir', '/Volumes/passport/datasets/action_LCA/video_data/train_result',
+                            """Directory where to write summary datas and""" 
+                            """model checkpoints.""")
+
 tf.app.flags.DEFINE_string('model', 'small',
-                            """Model configuration. Possible options are: """
-                            """small, medium, large."""
-)
+                           """Model configuration. Possible options are: """
+                           """small, medium, large.""")
+
 tf.app.flags.DEFINE_string('data_dir', '/Volumes/passport/datasets/action_LCA/video_data/sharded_data',
                            """Path to the processed data, i.e. """
                            """TFRecord of Example protos.""")
+
+tf.app.flags.DEFINE_string('pretrained_model_checkpoint_path', '',
+                           """If specified, restore this pretrained model """
+                           """before beginning any training.""")

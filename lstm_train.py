@@ -3,6 +3,8 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+import os.path
+from datetime import datetime
 import numpy as np
 
 import image_processing
@@ -125,19 +127,32 @@ def train(dataset):
     batch_size=config.batch_size)
   # Initializing the variables
   init = tf.initialize_all_variables()
+  # Create a saver to recurrently save all the vaiables 
+  saver = tf.train.Saver(tf.all_variables())
 
   # Launch the graph
   with tf.Session() as sess:
     sess.run(init)
-    step = 1
+
+    # restore the model from the checkpoint
+    if FLAGS.pretrained_model_checkpoint_path:
+      assert tf.gfile.Exists(FLAGS.pretrained_model_checkpoint_path)
+      restorer = tf.train.Saver(tf.all_variables())
+      restorer.restore(sess, FLAGS.pretrained_model_checkpoint_path)
+      print('%s: Pre-trained model restored from %s' %
+        (datetime.now(), FLAGS.pretrained_model_checkpoint_path))
+
     # start all the queue thread
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-    
+
     # Merge all the summary and write then out to the summary folder 
     all_summaries = tf.merge_all_summaries()
-    writer = tf.train.SummaryWriter("summary/train", graph=sess.graph)
+    writer = tf.train.SummaryWriter(
+      os.path.join(FLAGS.train_dir, 'summary'),
+      graph=sess.graph)
+
     # Keep training until reach max iterations
-    while step * config.batch_size < config.training_iters:
+    for step in xrange(config.training_iters):
       # get the image and label data
       summary_result, images, labels, _ = sess.run([
         all_summaries, images_op, 
@@ -146,15 +161,22 @@ def train(dataset):
       sess.run(optimizer, feed_dict={x: images, y: labels})
       # write the summary result to the writer
       writer.add_summary(summary_result)
+
+      # print out the loss and accuracy
       if step % config.display_step == 0:
         # Calculate batch accuracy
         acc = sess.run(accuracy, feed_dict={x: images, y: labels})
         # Calculate batch loss
         loss = sess.run(cost, feed_dict={x: images, y: labels})
-        print("Iter " + str(step*config.batch_size) + ", Minibatch Loss= " + \
+        print("Iter " + str(step) + ", Minibatch Loss= " + \
           "{:.6f}".format(loss) + ", Training Accuracy= " + \
           "{:.5f}".format(acc))
-      step += 1
+
+      # Save the model checkpoint periodically.
+      if step % 100 == 0 or (step + 1) == config.training_iters:
+        checkpoint_path = os.path.join(FLAGS.train_dir, 'model.ckpt')
+        saver.save(sess, checkpoint_path, global_step=step)
+
     # request to stop the input queue
     coord.request_stop()
     # Wait for threads to finish.

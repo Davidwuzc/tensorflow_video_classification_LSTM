@@ -14,9 +14,9 @@ FLAGS = tf.app.flags.FLAGS
 def main(_):
   train_dataset = LCAData('train')
   assert train_dataset.data_files()
-  if tf.gfile.Exists(FLAGS.train_dir):
-    tf.gfile.DeleteRecursively(FLAGS.train_dir)
-  tf.gfile.MakeDirs(FLAGS.train_dir)
+  # if tf.gfile.Exists(FLAGS.train_dir):
+  #   tf.gfile.DeleteRecursively(FLAGS.train_dir)
+  # tf.gfile.MakeDirs(FLAGS.train_dir)
   lstm_train.train(train_dataset)
 
 if __name__ == '__main__':
