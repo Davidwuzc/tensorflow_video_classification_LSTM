@@ -1,4 +1,4 @@
-"""A binary to train BiLSTM on the LCA data set.
+"""A binary to train BiLSTM on the KTH data set.
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -7,10 +7,10 @@ from __future__ import print_function
 import tensorflow as tf
 
 import lstm_train
-from lca_data import LCAData
+from kth_data import KTHData
 
 def main(_):
-  train_dataset = LCAData('train')
+  train_dataset = KTHData('train')
   assert train_dataset.data_files()
   lstm_train.train(train_dataset)
 

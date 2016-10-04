@@ -55,11 +55,11 @@ def inputs(dataset, batch_size=None, num_preprocess_threads=None):
   # Force all input processing onto CPU in order to reserve the GPU for
   # the forward inference and back-propagation.
   with tf.device('/cpu:0'):
-    images, labels, filenames = batch_inputs(
+    videos, labels, filenames = batch_inputs(
         dataset, batch_size, train=False,
         num_preprocess_threads=num_preprocess_threads)
 
-  return images, labels, filenames
+  return videos, labels, filenames
 
 
 def distorted_inputs(dataset, batch_size=None, num_preprocess_threads=None):
@@ -78,8 +78,8 @@ def distorted_inputs(dataset, batch_size=None, num_preprocess_threads=None):
       None defaults to FLAGS.num_preprocess_threads.
 
   Returns:
-    images: Images. 4D tensor of size [batch_size, FLAGS.image_size,
-                                       FLAGS.image_size, 3].
+    videos: Videos. 5D tensor of size [batch_size, sequence_size,
+                                        row, column, 3].
     labels: 1-D integer one host Tensor of [batch_size].
     filenames: 1-D integer Tensor of [FLAGS.batch_size].
   """
@@ -88,10 +88,10 @@ def distorted_inputs(dataset, batch_size=None, num_preprocess_threads=None):
 
   # Force all input processing onto CPU in order to reserve the GPU for
   # the forward inference and back-propagation.
-  images, labels_one_hot, filenames = batch_inputs(
+  videos, labels_one_hot, filenames = batch_inputs(
       dataset, batch_size, train=True,
       num_preprocess_threads=num_preprocess_threads)
-  return images, labels_one_hot, filenames
+  return videos, labels_one_hot, filenames
 
 
 def decode_jpeg(image_buffer, scope=None):
@@ -160,11 +160,12 @@ def video_preprocessing(image_features, train, thread_id=0):
 
   # convert the image_features dictionary to decoded images array
   images = []
-  for key, value in image_features.items():
-    image_features[int(key[-3:])] = image_features[key]
-    del image_features[key]
-  for index in xrange(len(image_features)):
-    images.append(decode_jpeg(image_features[index]))
+  tmp_dict = {}
+  for key, value in image_features.items(): 
+    tmp_dict[int(key[-3:])] = image_features[key]
+  image_features.clear()
+  for index in range(len(tmp_dict)):
+    images.append(decode_jpeg(tmp_dict[index]))
 
   height = FLAGS.image_size
   width = FLAGS.image_size
@@ -232,7 +233,7 @@ def parse_example_proto(example_serialized):
 
   # images data in the Example proto
   image_map = {}
-  for index in xrange(FLAGS.sequence_size):
+  for index in range(FLAGS.sequence_size):
     image_map['raw/image/%03d' % index] = tf.FixedLenFeature([], 
                                                             dtype=tf.string,
                                                             default_value='')
@@ -327,9 +328,9 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None):
                                         height, width, depth])
 
     # Display the sample training images in the visualizer.
-    images = tf.reshape(videos, shape=[batch_size*FLAGS.sequence_size, 
-                                       height, width, depth])
-    tf.image_summary('images', images, max_images=10)
+    images, *_ = tf.split(1, FLAGS.sequence_size, videos)
+    images = tf.squeeze(images)
+    tf.image_summary('images', images, max_images=batch_size)
 
     # convert the label to one hot vector
     labels = tf.reshape(label_index_batch, [batch_size])

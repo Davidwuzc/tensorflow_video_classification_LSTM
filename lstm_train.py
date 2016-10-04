@@ -65,16 +65,14 @@ def BiLSTM(x, weights, biases):
     #   (batch_size, num_input)
     x = tf.split(0, config.num_steps, x)
 
-  with tf.name_scope('pair_cells'):
+  with tf.name_scope('BiLSTM_cells'):
     # Define lstm cells with tensorflow
     # Forward direction cell
-    lstm_fw_cell = tf.nn.rnn_cell.LSTMCell(config.num_hidden,
-                                          forget_bias=1.0,
-                                          state_is_tuple=True)
+    lstm_fw_cell = tf.nn.rnn_cell.BasicLSTMCell(config.num_hidden,
+                                                state_is_tuple=True)
     # Backward direction cell
-    lstm_bw_cell = tf.nn.rnn_cell.LSTMCell(config.num_hidden,
-                                          forget_bias=1.0,
-                                          state_is_tuple=True)
+    lstm_bw_cell = tf.nn.rnn_cell.BasicLSTMCell(config.num_hidden,
+                                                state_is_tuple=True)
 
   with tf.name_scope('raw_output'):
     # Get lstm cell output
@@ -122,7 +120,7 @@ def train(dataset):
   # coordinator for controlling queue threads
   coord = tf.train.Coordinator()
   # initialize the image and label operator
-  images_op, labels_op, filenames_op = image_processing.distorted_inputs(
+  videos_op, labels_op, filenames_op = image_processing.distorted_inputs(
     dataset,
     batch_size=config.batch_size)
   # Initializing the variables
@@ -146,21 +144,21 @@ def train(dataset):
     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
     # Merge all the summary and write then out to the summary folder 
-    all_summaries = tf.merge_all_summaries()
+    merged_summaries = tf.merge_all_summaries()
     writer = tf.train.SummaryWriter(
       os.path.join(FLAGS.train_dir, 'summary'),
       graph=sess.graph)
 
     # Keep training until reach max iterations
-    for step in xrange(config.training_iters):
+    for step in range(config.training_iters):
       # get the image and label data
       summary_result, images, labels, _ = sess.run([
-        all_summaries, images_op, 
+        merged_summaries, videos_op, 
         labels_op, filenames_op])
       # run the optimizer
       sess.run(optimizer, feed_dict={x: images, y: labels})
       # write the summary result to the writer
-      writer.add_summary(summary_result)
+      writer.add_summary(summary_result, step)
 
       # print out the loss and accuracy
       if step % config.display_step == 0:

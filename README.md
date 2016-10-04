@@ -22,3 +22,15 @@ python convert_to_records.py
 # Start the `TensorBoard` to monitor the status
 
 `tensorboard --logdir=/path/to/folder/../summary`
+
+---
+
+### Remark for my own computer:
+
+#### Train the LCA dataset
+
+`python -B lca_train.py --data_dir=/Volumes/passport/datasets/action_LCA/sharded_data --train_dir=/Volumes/passport/datasets/action_LCA/train_result`
+
+#### Start TensorBoard
+
+`tensorboard --logdir=/Volumes/passport/datasets/action_LCA/train_result/summary`

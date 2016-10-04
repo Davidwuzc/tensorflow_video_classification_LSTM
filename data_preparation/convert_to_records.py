@@ -27,11 +27,14 @@ and
   ...
   validation_directory/validation-00127-of-00128
 
-where we have selected 1024 and 128 shards for each data set. Each record
+where we have selected 64 and 8 shards for each data set. Each record
 within the TFRecord file is a serialized Example proto. The Example proto
 contains the following fields:
 
-  image/encoded: string containing JPEG encoded image in RGB colorspace
+  raw/image/001: 
+  ...
+  raw/image/nnn: string containing JPEG encoded image in RGB colorspace
+
   image/height: integer, image height in pixels
   image/width: integer, image width in pixels
   image/colorspace: string, specifying the colorspace, always 'RGB'
@@ -62,12 +65,13 @@ import numpy as np
 import tensorflow as tf
 
 
-tf.app.flags.DEFINE_string('train_directory', '/Volumes/passport/datasets/action_LCA/video_data/train_data',
+tf.app.flags.DEFINE_string('train_directory', '/Volumes/passport/datasets/action_KTH/video',
                            'Training data directory')
-tf.app.flags.DEFINE_string('validation_directory', '/Volumes/passport/datasets/action_LCA/video_data/validation_data',
+tf.app.flags.DEFINE_string('validation_directory', '/Volumes/passport/datasets/action_KTH/video',
                            'Validation data directory')
-tf.app.flags.DEFINE_string('output_directory', '/Volumes/passport/datasets/action_LCA/video_data/sharded_data',
+tf.app.flags.DEFINE_string('output_directory', '/Volumes/passport/datasets/action_KTH/sharded_data',
                            'Output data directory')
+tf.app.flags.DEFINE_string('labels_file', '/Volumes/passport/datasets/action_KTH/video/label', 'Labels file')
 
 tf.app.flags.DEFINE_integer('train_shards', 64,
                             'Number of shards in training TFRecord files.')
@@ -78,14 +82,6 @@ tf.app.flags.DEFINE_integer('num_threads', 4,
                             'Number of threads to preprocess the images.')
 tf.app.flags.DEFINE_boolean('sequence_random', True,
                             'Determine whether to shuffle the image order or not.')
-# The labels file contains a list of valid labels are held in this file.
-# Assumes that the file contains entries as such:
-#   dog
-#   cat
-#   flower
-# where each line corresponds to a label. We map each label contained in
-# the file to an integer corresponding to the line number starting from 0.
-tf.app.flags.DEFINE_string('labels_file', '/Volumes/passport/datasets/action_LCA/video_data/label', 'Labels file')
 
 
 FLAGS = tf.app.flags.FLAGS
@@ -251,7 +247,7 @@ def _process_image_files_batch(coder, thread_index, ranges, name, foldernames,
   num_files_in_thread = ranges[thread_index][1] - ranges[thread_index][0]
 
   counter = 0
-  for s in xrange(num_shards_per_batch):
+  for s in range(num_shards_per_batch):
     # Generate a sharded version of the file name, e.g. 'train-00002-of-00010'
     shard = thread_index * num_shards_per_batch + s
     output_filename = '%s-%.5d-of-%.5d' % (name, shard, num_shards)
@@ -304,7 +300,7 @@ def _process_image_files(name, foldernames, texts, labels, num_shards):
   spacing = np.linspace(0, len(foldernames), FLAGS.num_threads + 1).astype(np.int)
   ranges = []
   threads = []
-  for i in xrange(len(spacing) - 1):
+  for i in range(len(spacing) - 1):
     ranges.append([spacing[i], spacing[i+1]])
 
   # Launch a thread for each batch.
@@ -318,7 +314,7 @@ def _process_image_files(name, foldernames, texts, labels, num_shards):
   coder = ImageCoder()
 
   threads = []
-  for thread_index in xrange(len(ranges)):
+  for thread_index in range(len(ranges)):
     args = (coder, thread_index, ranges, name, foldernames,
             texts, labels, num_shards)
     t = threading.Thread(target=_process_image_files_batch, args=args)
@@ -428,8 +424,8 @@ def main(unused_argv):
   print('Saving results to %s' % FLAGS.output_directory)
 
   # Run it!
-  _process_dataset('validation', FLAGS.validation_directory,
-                   FLAGS.validation_shards, FLAGS.labels_file)
+  #_process_dataset('validation', FLAGS.validation_directory,
+  #                 FLAGS.validation_shards, FLAGS.labels_file)
   _process_dataset('train', FLAGS.train_directory,
                    FLAGS.train_shards, FLAGS.labels_file)
 
