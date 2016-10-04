@@ -145,9 +145,12 @@ def train(dataset):
 
     # Merge all the summary and write then out to the summary folder 
     merged_summaries = tf.merge_all_summaries()
-    writer = tf.train.SummaryWriter(
-      os.path.join(FLAGS.train_dir, 'summary'),
-      graph=sess.graph)
+    # Clear the summary data folder beforehand
+    summary_path = os.path.join(FLAGS.train_dir, 'summary')
+    if tf.gfile.Exists(summary_path):
+      tf.gfile.DeleteRecursively(summary_path)
+    tf.gfile.MakeDirs(summary_path)
+    writer = tf.train.SummaryWriter(summary_path, graph=sess.graph)
 
     # Keep training until reach max iterations
     for step in range(config.training_iters):

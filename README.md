@@ -27,10 +27,12 @@ python convert_to_records.py
 
 ### Remark for my own computer:
 
-#### Train the LCA dataset
+#### Train the LCA/KTH dataset
 
 `python3 lca_train.py --data_dir=/Volumes/passport/datasets/action_LCA/sharded_data --train_dir=/Volumes/passport/datasets/action_LCA/train_result`
+`python3 lca_train.py --data_dir=/Volumes/passport/datasets/action_KTH/sharded_data --train_dir=/Volumes/passport/datasets/action_KTH/train_result`
 
 #### Start TensorBoard
 
 `tensorboard --logdir=/Volumes/passport/datasets/action_LCA/train_result/summary --reload_interval=10`
+`tensorboard --logdir=/Volumes/passport/datasets/action_KTH/train_result/summary --reload_interval=10`
