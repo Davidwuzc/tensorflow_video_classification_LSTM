@@ -78,7 +78,7 @@ def distorted_inputs(dataset, batch_size=None, num_preprocess_threads=None):
       None defaults to FLAGS.num_preprocess_threads.
 
   Returns:
-    videos: Videos. 5D tensor of size [batch_size, sequence_size,
+    videos: Videos. 5-D tensor of size [batch_size, sequence_size,
                                         row, column, 3].
     labels: 1-D integer one host Tensor of [batch_size].
     filenames: 1-D integer Tensor of [FLAGS.batch_size].
@@ -141,14 +141,12 @@ def pre_image(image, height, width, scope=None):
     return image
 
 
-def video_preprocessing(image_features, train, thread_id=0):
+def video_preprocessing(image_features):
   """Decode and preprocess one video for evaluation or training.
 
   Args:
     image_features: dictionary contains, Tensor tf.string containing the 
       contents of all the JPEG file of a video.
-    train: boolean
-    thread_id: integer indicating preprocessing thread
 
   Returns:
     resutl: 4-D float Tensor containing an appropriately list of scaled image
@@ -285,7 +283,7 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None):
                        'of 4 (%d % 4 != 0).', num_preprocess_threads)
 
     # Approximate number of examples per shard.
-    examples_per_shard = 25
+    examples_per_shard = 65
     # Size the random shuffle queue to balance between good global
     # mixing (more examples) and memory use (fewer examples).
     # 1 image uses 299*299*3*4 bytes = 1MB
@@ -306,12 +304,12 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None):
     _, example_serialized = reader.read(filename_queue)
 
     videos_and_labels_and_filenames = []
-    for thread_id in range(num_preprocess_threads):
-      # Parse a serialized Example proto to extract the image and metadata.
-      image_features, label_index, _, filename = parse_example_proto(
-          example_serialized)
-      video = video_preprocessing(image_features, train, thread_id)
-      videos_and_labels_and_filenames.append([video, label_index, filename])
+    # Parse a serialized Example proto to extract the image and metadata.
+    image_features, label_index, _, filename = parse_example_proto(
+        example_serialized)
+    video = video_preprocessing(image_features)
+    videos_and_labels_and_filenames.append([video, label_index, filename])
+    #videos_and_labels_and_filenames = (video, label_index, filename)
 
     videos, label_index_batch, filename_batch = tf.train.batch_join(
         videos_and_labels_and_filenames,
@@ -330,7 +328,7 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None):
     # Display the sample training images in the visualizer.
     images, *_ = tf.split(1, FLAGS.sequence_size, videos)
     images = tf.squeeze(images)
-    tf.image_summary('images', images, max_images=batch_size)
+    tf.image_summary('video_first_image', images, max_images=batch_size)
 
     # convert the label to one hot vector
     labels = tf.reshape(label_index_batch, [batch_size])

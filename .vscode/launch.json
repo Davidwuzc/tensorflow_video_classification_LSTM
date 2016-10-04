@@ -6,12 +6,16 @@
             "type": "python",
             "request": "launch",
             "stopOnEntry": true,
-            "pythonPath": "${config.python.pythonPath}",
+            "pythonPath": "/usr/local/bin/python3",
             "program": "${file}",
             "debugOptions": [
                 "WaitOnAbnormalExit",
                 "WaitOnNormalExit",
                 "RedirectOutput"
+            ],
+            "args":[
+                "--data_dir=/Volumes/passport/datasets/action_LCA/sharded_data",
+                "--train_dir=/Volumes/passport/datasets/action_LCA/train_result"
             ]
         },
         {

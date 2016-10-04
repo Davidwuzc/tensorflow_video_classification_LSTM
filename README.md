@@ -15,13 +15,13 @@ python convert_to_records.py
 
 [**reference link**](https://www.tensorflow.org/versions/r0.10/how_tos/reading_data/index.html#file-formats) for how to write data to tfrecord and read data from tfrecord:
 
-# Run the LCA training program
+# Run the LCA training program (only only compatible with python 3.x)
 
-`python -B lca_train.py --data_dir=/path/to/folder/../data/sharded_data`
+`python3 lca_train.py --data_dir=/path/to/folder/../data/sharded_data`
 
 # Start the `TensorBoard` to monitor the status
 
-`tensorboard --logdir=/path/to/folder/../summary`
+`tensorboard --logdir=/path/to/folder/../summary --reload_interval=10`
 
 ---
 
@@ -29,8 +29,8 @@ python convert_to_records.py
 
 #### Train the LCA dataset
 
-`python -B lca_train.py --data_dir=/Volumes/passport/datasets/action_LCA/sharded_data --train_dir=/Volumes/passport/datasets/action_LCA/train_result`
+`python3 lca_train.py --data_dir=/Volumes/passport/datasets/action_LCA/sharded_data --train_dir=/Volumes/passport/datasets/action_LCA/train_result`
 
 #### Start TensorBoard
 
-`tensorboard --logdir=/Volumes/passport/datasets/action_LCA/train_result/summary`
+`tensorboard --logdir=/Volumes/passport/datasets/action_LCA/train_result/summary --reload_interval=10`

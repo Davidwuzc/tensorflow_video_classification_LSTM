@@ -120,7 +120,7 @@ def train(dataset):
   # coordinator for controlling queue threads
   coord = tf.train.Coordinator()
   # initialize the image and label operator
-  videos_op, labels_op, filenames_op = image_processing.distorted_inputs(
+  videos_op, labels_op, _ = image_processing.distorted_inputs(
     dataset,
     batch_size=config.batch_size)
   # Initializing the variables
@@ -152,20 +152,20 @@ def train(dataset):
     # Keep training until reach max iterations
     for step in range(config.training_iters):
       # get the image and label data
-      summary_result, images, labels, _ = sess.run([
+      summary_result, videos, labels = sess.run([
         merged_summaries, videos_op, 
-        labels_op, filenames_op])
+        labels_op])
       # run the optimizer
-      sess.run(optimizer, feed_dict={x: images, y: labels})
+      sess.run(optimizer, feed_dict={x: videos, y: labels})
       # write the summary result to the writer
       writer.add_summary(summary_result, step)
 
       # print out the loss and accuracy
       if step % config.display_step == 0:
         # Calculate batch accuracy
-        acc = sess.run(accuracy, feed_dict={x: images, y: labels})
+        acc = sess.run(accuracy, feed_dict={x: videos, y: labels})
         # Calculate batch loss
-        loss = sess.run(cost, feed_dict={x: images, y: labels})
+        loss = sess.run(cost, feed_dict={x: videos, y: labels})
         print("Iter " + str(step) + ", Minibatch Loss= " + \
           "{:.6f}".format(loss) + ", Training Accuracy= " + \
           "{:.5f}".format(acc))
