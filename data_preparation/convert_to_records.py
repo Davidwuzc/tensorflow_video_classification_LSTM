@@ -65,13 +65,13 @@ import numpy as np
 import tensorflow as tf
 
 
-tf.app.flags.DEFINE_string('train_directory', '/Volumes/passport/datasets/action_KTH/video',
+tf.app.flags.DEFINE_string('train_directory', '/Volumes/passport/datasets/action_LCA/origin_video',
                            'Training data directory')
 tf.app.flags.DEFINE_string('validation_directory', '/Volumes/passport/datasets/action_KTH/video',
                            'Validation data directory')
-tf.app.flags.DEFINE_string('output_directory', '/Volumes/passport/datasets/action_KTH/sharded_data',
+tf.app.flags.DEFINE_string('output_directory', '/Volumes/passport/datasets/action_LCA/sharded_data_11',
                            'Output data directory')
-tf.app.flags.DEFINE_string('labels_file', '/Volumes/passport/datasets/action_KTH/video/label', 'Labels file')
+tf.app.flags.DEFINE_string('labels_file', '/Volumes/passport/datasets/action_LCA/video/label', 'Labels file')
 
 tf.app.flags.DEFINE_integer('train_shards', 64,
                             'Number of shards in training TFRecord files.')

@@ -165,8 +165,8 @@ def video_preprocessing(image_features):
   for index in range(len(tmp_dict)):
     images.append(decode_jpeg(tmp_dict[index]))
 
-  height = FLAGS.image_size
-  width = FLAGS.image_size
+  height = FLAGS.image_height
+  width = FLAGS.image_width
 
   for idx, image in enumerate(images):
     image = pre_image(image, height, width)
@@ -190,15 +190,15 @@ def parse_example_proto(example_serialized):
   containing serialized Example protocol buffers. Each Example proto contains
   the following fields:
 
-    image/height: 462
-    image/width: 581
+    image/height: 200
+    image/width: 100
     image/colorspace: 'RGB'
     image/channels: 3
-    image/class/label: 615
+    image/class/label: 2
     image/class/synset: 'n03623198'
-    image/class/text: 'knee pad'
+    image/class/text: 'walking'
     image/format: 'JPEG'
-    image/filename: 'ILSVRC2012_val_00041207.JPEG'
+    image/filename: '00001.JPEG'
     raw/image/001: <JPEG encoded string>
     ...
     raw/image/n: <JPEG encoded string>
@@ -317,8 +317,8 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None):
         capacity=2 * num_preprocess_threads * batch_size)
 
     # Reshape images into these desired dimensions.
-    height = FLAGS.image_size
-    width = FLAGS.image_size
+    height = FLAGS.image_height
+    width = FLAGS.image_width
     depth = 3
 
     videos = tf.cast(videos, tf.float32)

@@ -9,10 +9,13 @@ import tensorflow as tf
 tf.app.flags.DEFINE_integer('batch_size', 10,
                             """Number of images to process in a batch.""")
 
-tf.app.flags.DEFINE_integer('image_size', 80,
-                            """Provide square images of this size.""")
+tf.app.flags.DEFINE_integer('image_height', 200,
+                            """Provide the height of the image.""")
 
-tf.app.flags.DEFINE_integer('sequence_size', 100, 
+tf.app.flags.DEFINE_integer('image_width', 100,
+                            """Provide the height of the image.""")
+
+tf.app.flags.DEFINE_integer('sequence_size', 11, 
                             """ length of the video """
                             """proto""")
 

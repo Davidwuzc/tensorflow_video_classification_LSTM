@@ -13,15 +13,16 @@
 #     (( count++ ))
 # done
 
-for folder in /Volumes/passport/datasets/action_KTH/video/*
+for folder in /Volumes/passport/datasets/action_LCA/origin_video/*
 do
-    count = 1
+    count = 0
     for file in "$folder"/*.avi
     do
         if [[ ! -d "$folder"/$count ]]; then
             mkdir -p "$folder"/$count
         fi
-        ffmpeg -i "$file" "$folder"/$count/%05d.png
+        ffmpeg -i "$file" -vf fps=5 "$folder"/$count/%05d.png
+        rm "$file"
         (( count++ ))
     done
 done

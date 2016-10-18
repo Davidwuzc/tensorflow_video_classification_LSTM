@@ -19,11 +19,11 @@ class SmallConfig(object):
   training_iters = 10000
   batch_size = FLAGS.batch_size
   display_step = 1
-  row = FLAGS.image_size
-  column = FLAGS.image_size
+  height = FLAGS.image_height
+  width = FLAGS.image_width
   channel = 3
   # Network parameters
-  num_input = row * column * channel
+  num_input = height * width * channel
   num_steps = FLAGS.sequence_size
   num_hidden = 200 # hidden layer number of features
 
@@ -50,11 +50,11 @@ def BiLSTM(x, weights, biases):
   config = get_config()
 
   # Prepare data shape to match `bidirectional_rnn` function requirements
-  # Current data input shape: (batch_size, n_step, n_row, n_column, n_channel)
+  # Current data input shape: (batch_size, n_step, n_height, n_width, n_channel)
   # Required shape: 'num_steps' tensors list of shape (batch_size, num_input)
-  # num_input is equal to n_row * n_column * n_channel
+  # num_input is equal to n_height * n_width * n_channel
 
-  with tf.name_scope('input_transform'):
+  with tf.name_scope('data_preprocessing'):
     # Reshape to (batch_size, n_step, num_input)
     x = tf.reshape(x, [config.batch_size, config.num_steps, config.num_input])
     # Permuting batch_size and n_step
@@ -74,14 +74,10 @@ def BiLSTM(x, weights, biases):
     lstm_bw_cell = tf.nn.rnn_cell.BasicLSTMCell(config.num_hidden,
                                                 state_is_tuple=True)
 
-  with tf.name_scope('raw_output'):
+  with tf.name_scope('Bidrectional_rnn'):
     # Get lstm cell output
-    try:
-      outputs, _, _ = tf.nn.bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, x,
+    outputs, _, _ = tf.nn.bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, x,
                                             dtype=tf.float32)
-    except Exception: # Old TensorFlow version only returns outputs not states
-      outputs = tf.nn.bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, x,
-                                      dtype=tf.float32)
 
   with tf.name_scope('activation'):
     # Linear activation, using rnn inner loop last output
@@ -95,7 +91,7 @@ def train(dataset):
   with tf.name_scope('input'):
     # tf Graph image inputs and logits input
     x = tf.placeholder(tf.float32,
-      [None, config.num_steps, config.row, config.column, config.channel], 
+      [None, config.num_steps, config.height, config.width, config.channel], 
       name='x-input')
     y = tf.placeholder(tf.float32, [None, num_classes], name='y-input')
   with tf.name_scope('weights'):

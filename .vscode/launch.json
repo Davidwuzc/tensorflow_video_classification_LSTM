@@ -14,8 +14,8 @@
                 "RedirectOutput"
             ],
             "args":[
-                "--data_dir=/Volumes/passport/datasets/action_LCA/sharded_data",
-                "--train_dir=/Volumes/passport/datasets/action_LCA/train_result"
+                "--data_dir=/Volumes/passport/datasets/action_LCA/fps_5/sharded_data_11",
+                "--train_dir=/Volumes/passport/datasets/action_LCA/fps_5/train_result"
             ]
         },
         {
