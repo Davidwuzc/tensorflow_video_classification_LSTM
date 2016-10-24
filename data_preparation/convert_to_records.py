@@ -276,21 +276,20 @@ def _process_image_files_batch(coder, thread_index, ranges, name, foldernames,
         example = _convert_to_example(foldername, images_buffer, label,
                                       text, height, width)
         writer.write(example.SerializeToString())
-        
-      counter += 1
-      shard_counter += 1
-      
+        counter += 1
+        shard_counter += 1
+
       if not counter % 1000:
-        print('%s [thread %d]: Processed %d of %d videos in thread batch.' %
-              (datetime.now(), thread_index, counter, num_files_in_thread))
+        print('%s [thread %d]: Processed %d videos in thread batch.' %
+              (datetime.now(), thread_index, counter))
         sys.stdout.flush()
 
-    print('%s [thread %d]: Wrote %d videos to %s' %
-          (datetime.now(), thread_index, shard_counter, output_file))
+    print('%s [thread %d]: Wrote %d videos' %
+          (datetime.now(), thread_index, shard_counter))
     sys.stdout.flush()
     shard_counter = 0
-  print('%s [thread %d]: Wrote %d videos to %d shards.' %
-        (datetime.now(), thread_index, counter, num_files_in_thread))
+  print('%s [thread %d]: Wrote %d videos in total' %
+        (datetime.now(), thread_index, counter))
   sys.stdout.flush()
 
 
@@ -334,10 +333,6 @@ def _process_image_files(name, foldernames, texts, labels, num_shards):
 
   # Wait for all the threads to terminate.
   coord.join(threads)
-  print('%s: Finished writing all %d video in data set.' %
-        (datetime.now(), len(foldernames)))
-  sys.stdout.flush()
-
 
 def _find_video_folders(data_dir, label_file):
   """Build a list of all video folders and labels in the data set.
