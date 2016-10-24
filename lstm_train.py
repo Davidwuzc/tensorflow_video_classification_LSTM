@@ -25,7 +25,8 @@ class SmallConfig(object):
   # Network parameters
   num_input = height * width * channel
   num_steps = FLAGS.sequence_size
-  num_hidden = 200 # hidden layer number of features
+  num_hidden = 256 # hidden layer number of features
+  num_layer = 3
 
 def get_config():
   if FLAGS.model == "small":
@@ -70,13 +71,17 @@ def BiLSTM(x, weights, biases):
     # Forward direction cell
     lstm_fw_cell = tf.nn.rnn_cell.BasicLSTMCell(config.num_hidden,
                                                 state_is_tuple=True)
+    cell_fw = tf.nn.rnn_cell.MultiRNNCell([lstm_fw_cell] * config.num_layer, 
+                                        state_is_tuple=True)
     # Backward direction cell
     lstm_bw_cell = tf.nn.rnn_cell.BasicLSTMCell(config.num_hidden,
                                                 state_is_tuple=True)
-
+    cell_bw = tf.nn.rnn_cell.MultiRNNCell([lstm_fw_cell] * config.num_layer, 
+                                        state_is_tuple=True)
+    
   with tf.name_scope('Bidrectional_rnn'):
     # Get lstm cell output
-    outputs, _, _ = tf.nn.bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, x,
+    outputs, _, _ = tf.nn.bidirectional_rnn(cell_fw, cell_bw, x,
                                             dtype=tf.float32)
 
   with tf.name_scope('activation'):

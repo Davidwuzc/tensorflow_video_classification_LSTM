@@ -14,8 +14,10 @@
                 "RedirectOutput"
             ],
             "args":[
-                "--data_dir=/Volumes/passport/datasets/action_LCA/fps_5/sharded_data_11",
-                "--train_dir=/Volumes/passport/datasets/action_LCA/fps_5/train_result"
+                "--train_directory=/Users/dgu/Documents/projects/machine_learning/lca_data/fps_5/origin_video",
+                "--output_directory=/Users/dgu/Documents/projects/machine_learning/lca_data/fps_5/result_data",
+                "--label_file=/Users/dgu/Documents/projects/machine_learning/lca_data/fps_5/label",
+                "--sequence_length=5"
             ]
         },
         {

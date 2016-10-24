@@ -65,18 +65,20 @@ import numpy as np
 import tensorflow as tf
 
 
-tf.app.flags.DEFINE_string('train_directory', '/Volumes/passport/datasets/action_LCA/origin_video',
+tf.app.flags.DEFINE_string('train_directory', '/tmp/dataset/train_directory',
                            'Training data directory')
-tf.app.flags.DEFINE_string('validation_directory', '/Volumes/passport/datasets/action_KTH/video',
+tf.app.flags.DEFINE_string('validation_directory', '/tmp/dataset/train_directory',
                            'Validation data directory')
-tf.app.flags.DEFINE_string('output_directory', '/Volumes/passport/datasets/action_LCA/sharded_data_11',
+tf.app.flags.DEFINE_string('output_directory', '/tmp/dataset/result',
                            'Output data directory')
-tf.app.flags.DEFINE_string('labels_file', '/Volumes/passport/datasets/action_LCA/video/label', 'Labels file')
+tf.app.flags.DEFINE_string('label_file', '/tmp/dataset/label.txt', 'Labels file')
 
 tf.app.flags.DEFINE_integer('train_shards', 64,
                             'Number of shards in training TFRecord files.')
 tf.app.flags.DEFINE_integer('validation_shards', 8,
                             'Number of shards in validation TFRecord files.')
+tf.app.flags.DEFINE_integer('sequence_length', 16,
+                            'The length of one video clips ')
 
 tf.app.flags.DEFINE_integer('num_threads', 4,
                             'Number of threads to preprocess the images.')
@@ -190,14 +192,16 @@ def _process_image(foldername, coder):
     foldernames: string, path to a video folder e.g., '/path/to/1'.
     coder: instance of ImageCoder to provide TensorFlow image coding utils.
   Returns:
-    images_buffer: list, contains strings of JPEG encoding of RGB image.
+    videos_buffer: list, contains list of video with specific sequence length. These video is actually list of strings of JPEG encoding of RGB image.
     height: integer, image height in pixels.
     width: integer, image width in pixels.
   """
   # Read the image file.
+  videos_data = []
   images_data = []
   filenames = tf.gfile.Glob(foldername + '/*')
 
+  count = 0
   for filename in filenames:
     image_data = tf.gfile.FastGFile(filename, 'r').read()
     # Convert any PNG to JPEG's for consistency.
@@ -215,8 +219,13 @@ def _process_image(foldername, coder):
 
     # Add the image to the images data
     images_data.append(image_data)
+    count += 1
+    if count % FLAGS.sequence_length == 0:
+      videos_data.append(images_data)
 
-  return images_data, height, width
+  if len(videos_data) == 0:
+    raise ValueError('sequence length is too long, please set the length smaller than the video length')
+  return videos_data, height, width
 
 
 def _process_image_files_batch(coder, thread_index, ranges, name, foldernames,
@@ -261,14 +270,16 @@ def _process_image_files_batch(coder, thread_index, ranges, name, foldernames,
       label = labels[i]
       text = texts[i]
 
-      images_buffer, height, width = _process_image(foldername, coder)
+      videos_buffer, height, width = _process_image(foldername, coder)
 
-      example = _convert_to_example(foldername, images_buffer, label,
-                                    text, height, width)
-      writer.write(example.SerializeToString())
-      shard_counter += 1
+      for images_buffer in videos_buffer:
+        example = _convert_to_example(foldername, images_buffer, label,
+                                      text, height, width)
+        writer.write(example.SerializeToString())
+        
       counter += 1
-
+      shard_counter += 1
+      
       if not counter % 1000:
         print('%s [thread %d]: Processed %d of %d videos in thread batch.' %
               (datetime.now(), thread_index, counter, num_files_in_thread))
@@ -328,7 +339,7 @@ def _process_image_files(name, foldernames, texts, labels, num_shards):
   sys.stdout.flush()
 
 
-def _find_video_folders(data_dir, labels_file):
+def _find_video_folders(data_dir, label_file):
   """Build a list of all video folders and labels in the data set.
 
   Args:
@@ -344,7 +355,7 @@ def _find_video_folders(data_dir, labels_file):
       where 'walk' is the label associated with these images.
       number 1..n means that all the images in folder 1 belongs to one video
 
-    labels_file: string, path to the labels file.
+    label_file: string, path to the label file.
 
       The list of valid labels are held in this file. Assumes that the file
       contains entries as such:
@@ -362,7 +373,7 @@ def _find_video_folders(data_dir, labels_file):
   """
   print('Determining list of input files and labels from %s.' % data_dir)
   unique_labels = [l.strip() for l in tf.gfile.FastGFile(
-      labels_file, 'r').readlines()]
+      label_file, 'r').readlines()]
 
   labels = []
   folders = []
@@ -402,16 +413,16 @@ def _find_video_folders(data_dir, labels_file):
   return folders, texts, labels
 
 
-def _process_dataset(name, directory, num_shards, labels_file):
+def _process_dataset(name, directory, num_shards, label_file):
   """Process a complete data set and save it as a TFRecord.
 
   Args:
     name: string, unique identifier specifying the data set.
     directory: string, root path to the data set.
     num_shards: integer number of shards for this data set.
-    labels_file: string, path to the labels file.
+    label_file: string, path to the labels file.
   """
-  foldernames, texts, labels = _find_video_folders(directory, labels_file)
+  foldernames, texts, labels = _find_video_folders(directory, label_file)
   _process_image_files(name, foldernames, texts, labels, num_shards)
 
 
@@ -425,9 +436,9 @@ def main(unused_argv):
 
   # Run it!
   #_process_dataset('validation', FLAGS.validation_directory,
-  #                 FLAGS.validation_shards, FLAGS.labels_file)
+  #                 FLAGS.validation_shards, FLAGS.label_file)
   _process_dataset('train', FLAGS.train_directory,
-                   FLAGS.train_shards, FLAGS.labels_file)
+                   FLAGS.train_shards, FLAGS.label_file)
 
 
 if __name__ == '__main__':
