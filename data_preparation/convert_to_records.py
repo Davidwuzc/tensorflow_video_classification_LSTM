@@ -99,10 +99,6 @@ def _bytes_feature(value):
   """Wrapper for inserting bytes features into Example proto."""
   return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-def _images_feature(value):
-  """Wrapper for inserting images features into Example proto."""
-  
-
 
 def _convert_to_example(foldername, images_buffer, label, text, height, width):
   """Build an Example proto for an example.
