@@ -1,6 +1,7 @@
 [**origin file link**](https://github.com/tensorflow/models/blob/master/inception/inception/data/build_image_data.py)
 
-[**reference link**](https://www.tensorflow.org/versions/r0.10/how_tos/reading_data/index.html#file-formats) for how to write data to tfrecord and read data from tfrecord:
+[**reference link**](https://www.tensorflow.org/versions/r0.10/how_tos/reading_data/index.html#file-formats) 
+for how to write data to tfrecord and read data from tfrecord:
 
 # Run the LCA training program (only only compatible with python 3.x)
 
@@ -16,7 +17,7 @@
 
 #### Train the LCA/KTH dataset
 
-`python3 lca_train.py --data_dir=/Users/dgu/Documents/projects/machine_learning/lca_data/fps_5/sharded_data_11 --train_dir=/Users/dgu/Documents/projects/machine_learning/lca_data/fps_5/train_result`
+`python3 lca_train.py --data_dir=/Users/dgu/Documents/projects/machine_learning/lca_data/fps_5/sharded_data_5 --train_dir=/Users/dgu/Documents/projects/machine_learning/lca_data/fps_5/train_result`
 `python3 kth_train.py --data_dir=/Users/dgu/Documents/projects/machine_learning/kth_data/sharded_data --train_dir=/Users/dgu/Documents/projects/machine_learning/kth_data/train_result`
 
 #### Start TensorBoard

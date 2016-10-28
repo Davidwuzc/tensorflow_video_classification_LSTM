@@ -6,7 +6,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 # video parameters
-tf.app.flags.DEFINE_integer('batch_size', 20,
+tf.app.flags.DEFINE_integer('batch_size', 128,
                             """Number of images to process in a batch.""")
 
 tf.app.flags.DEFINE_integer('image_height', 160,
@@ -15,8 +15,8 @@ tf.app.flags.DEFINE_integer('image_height', 160,
 tf.app.flags.DEFINE_integer('image_width', 120,
                             """Provide the height of the image.""")
 
-tf.app.flags.DEFINE_integer('sequence_size', 16, 
-                            """ length of the video """
+tf.app.flags.DEFINE_integer('sequence_size', 5, 
+                            """length of the video """
                             """proto""")
 
 # image processing parameters
