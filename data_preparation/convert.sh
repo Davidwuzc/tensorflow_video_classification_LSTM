@@ -19,7 +19,6 @@ for folder in $1*
 do
     for file in "$folder"/*.avi
     do
-        echo "${file[@]%.avi}"
         if [[ ! -d "${file[@]%.avi}" ]]; then
             mkdir -p "${file[@]%.avi}"
         fi
