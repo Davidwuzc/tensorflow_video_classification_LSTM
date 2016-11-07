@@ -1,19 +1,26 @@
 # Data preprocessing
 
-## Step 1 (conver.sh)
+## Step 1 (convert.sh)
+
 This will convert the video file to sequence of images. For example, if we 
 set the fps to 30 and the video length is 2 seconds, then the video will be 
 converted to 60 images.
 
-1. config the path to your folder at line `for folder in /path/to/video/folder/*`
-    > The folder structure is `.../video/classes_name/video_file.avi`
-    > <br> Example: `.../video/arrive/video1.avi` & `.../video/run/video2.avi` etc.
-    > <br> The code will be `for folder in .../video/*`
+The `convert.sh` script has two paramters:
+* path to video folder
+* fps number
 
-2. (option) change the fps setting at line `ffmpeg -i "$file" -vf fps=5 
-    "$folder"/$count/%05d.png`
+### **Example Usage**:
+* Folder structure is `.../video/walk/video_file.avi` 
+* Fps setting is 20
+
+Example command will be 
+```
+sudo ./convert.sh .../video/ 20
+```
 
 ## Step 2 (convert_to_records.py)
+
 This will convert sequence of images to [TFRecord](https://www.tensorflow.org/versions/r0.11/how_tos/reading_data/index.html#file-formats) 
 which is the standard TensorFlow format.
 
@@ -32,16 +39,19 @@ which is the standard TensorFlow format.
     > exit
     > ...
     > ```
-5. (option) set the **sequence_length** parameter to the length of one video clip. This value should be smaller than the origin length of the video.
+5. (option) set the **sequence_length** parameter to the length of one video clip. This value should be smaller than the origin length of the video, the default value of **seuqnce_length**
+is 16.
  
 ### Example usage (only compatible with python 2.x)
+
+---
 ```
-python convert_to_records.py \
-    --train_directory=.../training_data/run/1/images1.png \
-    --validation_directory=.../validation_data/run/1/images1.png \
-    --output_directory=.../result \
-    --labels_file=.../label.txt \
-    --sequence_length=16
+python convert_to_records.py 
+    --train_directory=.../training_data 
+    --validation_directory=.../validation_data 
+    --output_directory=.../result 
+    --labels_file=.../label.txt 
+    --sequence_length=32
 ```
 
 ---

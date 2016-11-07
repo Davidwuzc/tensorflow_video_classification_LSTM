@@ -3,11 +3,12 @@
 The image data set is expected to reside in JPEG files located in the
 following directory structure.
 
-  data_dir/label_0/image0.jpeg
-  data_dir/label_0/image1.jpg
+  data_dir/run/video1/00001.jpeg
+  data_dir/run/video1/00002.jpeg
+  data_dir/run/video1/00003.jpeg
   ...
-  data_dir/label_1/weird-image.jpeg
-  data_dir/label_1/my-image.jpeg
+  data_dir/run/video2/00001.jpeg
+  data_dir/run/video2/00002.jpeg
   ...
 
 where the sub-directory is the unique label associated with these images.
@@ -34,22 +35,18 @@ contains the following fields:
   raw/image/001: 
   ...
   raw/image/nnn: string containing JPEG encoded image in RGB colorspace
-
   image/height: integer, image height in pixels
   image/width: integer, image width in pixels
   image/colorspace: string, specifying the colorspace, always 'RGB'
   image/channels: integer, specifying the number of channels, always 3
   image/format: string, specifying the format, always'JPEG'
-
   image/filename: string containing the basename of the image file
-            e.g. 'n01440764_10026.JPEG' or 'ILSVRC2012_val_00000293.JPEG'
+            e.g. '00001.JPEG' or '00002.JPEG'
   image/class/label: integer specifying the index in a classification layer.
     The label ranges from [0, num_labels] where 0 is unused and left as
     the background class.
   image/class/text: string specifying the human-readable version of the label
-    e.g. 'dog'
-
-If you data set involves bounding boxes, please look at build_imagenet_data.py.
+    e.g. 'walk'
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -104,7 +101,7 @@ def _convert_to_example(foldername, images_buffer, label, text, height, width):
   """Build an Example proto for an example.
 
   Args:
-    foldername: string, path to an image file, e.g., '/training_data/walk/1'
+    foldername: string, path to an image file, e.g., '/training_data/walk/video1'
     images_buffer: list, containing string of JPEG encoding of RGB image
     label: integer, identifier for the ground truth for the network
     text: string, unique human-readable, e.g. 'dog'
@@ -185,7 +182,7 @@ def _process_image(foldername, coder):
   """Process a single image file.
 
   Args:
-    foldernames: string, path to a video folder e.g., '/path/to/1'.
+    foldernames: string, path to a video folder e.g., '/path/to/video'.
     coder: instance of ImageCoder to provide TensorFlow image coding utils.
   Returns:
     videos_buffer: list, contains list of video with specific sequence length. These video is actually list of strings of JPEG encoding of RGB image.
@@ -339,12 +336,14 @@ def _find_video_folders(data_dir, label_file):
       Assumes that the video data set resides in JPEG files located in
       the following directory structure.
 
-        data_dir/walk/1/image1.JPEG
-        data_dir/walk/1/image2.JPEG
-        data_dir/walk/2/my-image.jpg
+        data_dir/walk/video1/00001.JPEG
+        data_dir/walk/video1/00002.JPEG
+        ...
+        data_dir/walk/video2/00001.jpg
+        ...
 
       where 'walk' is the label associated with these images.
-      number 1..n means that all the images in folder 1 belongs to one video
+      number 1..n means that all the images in folder video1 belongs to one video
 
     label_file: string, path to the label file.
 
@@ -359,7 +358,7 @@ def _find_video_folders(data_dir, label_file):
 
   Returns:
     folders: list of strings; each string is a path to an video folder.
-    texts: list of strings; each string is the class, e.g. 'dog'
+    texts: list of strings; each string is the class, e.g. 'walk'
     labels: list of integer; each integer identifies the ground truth.
   """
   print('Determining list of input files and labels from %s.' % data_dir)
