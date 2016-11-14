@@ -14,9 +14,7 @@
                 "RedirectOutput"
             ],
             "args":[
-                "--train_directory=/Users/dgu/Documents/projects/machine_learning/kth_data/origin_images",
-                "--output_directory=/Users/dgu/Documents/projects/machine_learning/kth_data/sharded_data_test",
-                "--label_file=/Users/dgu/Documents/projects/machine_learning/kth_data/label.txt"
+                "--data_path=/Users/dgu/Documents/projects/machine_learning/ptb_data"
             ]
         },
         {
