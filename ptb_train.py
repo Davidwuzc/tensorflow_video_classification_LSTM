@@ -36,14 +36,14 @@ class Config(object):
 
 class PTBInput(object):
     """The input data."""
-    def __init__(self, config, data, name=None):
+    def __init__(self, config, data, name = None):
         self.batch_size = batch_size = config.batch_size
         self.num_steps = num_steps = config.num_steps
         self.epoch_size = ((len(data) // batch_size) - 1) // num_steps
         # input_data size: [batch_size, num_steps]
         # targets size: [batch_size, num_steps]
         self.input_data, self.targets = ptb_data.ptb_producer(
-            data, batch_size, num_steps, name=name)
+            data, batch_size, num_steps, name = name)
 
         # Data preprocessing: input_data
         #   [batch_size, num_steps] => num_steps * [batch_size, hidden_size]
@@ -51,7 +51,7 @@ class PTBInput(object):
             embedding = tf.get_variable(
                 "embedding", 
                 [config.num_classes, config.hidden_size], 
-                dtype=tf.float32)
+                dtype = tf.float32)
         self.input_data = tf.nn.embedding_lookup(embedding, self.input_data)
         self.input_data = [tf.squeeze(input_step, [1])
                     for input_step in tf.split(1, num_steps, self.input_data)]
@@ -61,7 +61,7 @@ class PTBInput(object):
         self.targets = tf.reshape(self.targets, [-1])
         self.targets = tf.one_hot(self.targets, config.num_classes, 1, 0)
 
-def run_epoch(session, model, eval_op=None, verbose=False):
+def run_epoch(session, model, eval_op = None, verbose = False):
     """Runs the model on the given data."""
 
     start_time = time.time()
@@ -108,24 +108,24 @@ def main(_):
                                                     config.init_scale)
 
         with tf.name_scope('Train'):
-            train_input = PTBInput(config=config, data=train_data)
-            with tf.variable_scope("Model", reuse=None, initializer=initializer):
+            train_input = PTBInput(config = config, data = train_data)
+            with tf.variable_scope("Model", reuse = None, initializer = initializer):
                 model = BiLSTM(True, train_input, config)
 
-        sv = tf.train.Supervisor(logdir=FLAGS.save_path)
+        sv = tf.train.Supervisor(logdir = FLAGS.save_path)
         with sv.managed_session() as session:
             for i in range(config.max_max_epoch):
                 lr_decay = config.lr_decay ** max(i - config.max_epoch, 0.0)
                 model.assign_lr(session, config.learning_rate * lr_decay)
 
                 print("Epoch: %d Learning rate: %.3f" % (i + 1, session.run(model.lr)))
-                train_perplexity = run_epoch(session, model, eval_op=model.train_op,
-                                            verbose=True)
+                train_perplexity = run_epoch(session, model, eval_op = model.train_op,
+                                            verbose = True)
                 print("Epoch: %d Train Perplexity: %.3f" % (i + 1, train_perplexity))
             
             if FLAGS.save_path:
                 print("Saving model to %s." % FLAGS.save_path)
-                sv.saver.save(session, FLAGS.save_path, global_step=sv.global_step)
+                sv.saver.save(session, FLAGS.save_path, global_step = sv.global_step)
 
 
 if __name__ == '__main__':
