@@ -21,7 +21,7 @@ FLAGS = tf.app.flags.FLAGS
 class Config(object):
     """Configuration"""
     init_scale = 0.1
-    learning_rate = 1.0
+    learning_rate = 0.01
     max_grad_norm = 5
     num_layers = 2
     num_steps = 20
@@ -59,7 +59,6 @@ class PTBInput(object):
         # Data preprocessing(one hot convertion): targets
         #   [batch_size, num_steps] => [batch_size * num_steps, num_classes]
         self.targets = tf.reshape(self.targets, [-1])
-        self.targets = tf.one_hot(self.targets, config.num_classes, 1, 0)
 
 def run_epoch(session, model, eval_op = None, verbose = False):
     """Runs the model on the given data."""
@@ -70,7 +69,6 @@ def run_epoch(session, model, eval_op = None, verbose = False):
 
     fetches = {
         "cost": model.cost,
-        "accuracy": model.accuracy
     }
     if eval_op is not None:
         fetches["eval_op"] = eval_op
@@ -78,17 +76,15 @@ def run_epoch(session, model, eval_op = None, verbose = False):
     for step in range(model.input.epoch_size):
         vals = session.run(fetches)
         cost = vals["cost"]
-        accuracy = vals["accuracy"]
 
         costs += cost
         iters += model.input.num_steps
 
         if verbose and step % (model.input.epoch_size // 10) == 10:
-            print("%.3f % | perplexity: %.3f | speed: %.0f wps | accuracy: %.3f" %
+            print("%.3f -- perplexity: %.3f -- speed: %.0f wps" %
                 (step * 1.0 / model.input.epoch_size, 
                 np.exp(costs / iters),
-                iters * model.input.batch_size / (time.time() - start_time),
-                accuracy))
+                iters * model.input.batch_size / (time.time() - start_time)))
 
     return np.exp(costs / iters)
 
