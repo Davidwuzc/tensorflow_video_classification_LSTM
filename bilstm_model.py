@@ -27,38 +27,39 @@ class BiLSTM(object):
             false
     """
 
-    def __init__(self, is_training, input_, config, is_video = False):
+    def __init__(self, is_training, input_, config, is_video=False):
         self._input = input_
 
         # Define lstm cells with tensorflow
         # Forward direction cell
         lstm_fw_cell = tf.nn.rnn_cell.BasicLSTMCell(config.hidden_size,
-                                                    state_is_tuple = True)
+                                                    state_is_tuple=True)
         if is_training and config.keep_prob < 1:
             lstm_fw_cell = tf.nn.rnn_cell.DropoutWrapper(
-                lstm_fw_cell, output_keep_prob = config.keep_prob)
+                lstm_fw_cell, output_keep_prob=config.keep_prob)
         cell_fw = tf.nn.rnn_cell.MultiRNNCell(
-            [lstm_fw_cell] * config.num_layers, 
-            state_is_tuple = True)
+            [lstm_fw_cell]*config.num_layers, 
+            state_is_tuple=True)
         # Backward direction cell
         lstm_bw_cell = tf.nn.rnn_cell.BasicLSTMCell(config.hidden_size,
-                                                    state_is_tuple = True) 
+                                                    state_is_tuple=True) 
         if is_training and config.keep_prob < 1:
             lstm_bw_cell = tf.nn.rnn_cell.DropoutWrapper(
-                lstm_bw_cell, output_keep_prob = config.keep_prob)
+                lstm_bw_cell, output_keep_prob=config.keep_prob)
         cell_bw = tf.nn.rnn_cell.MultiRNNCell(
-            [lstm_fw_cell] * config.num_layers, 
-            state_is_tuple = True)
+            [lstm_fw_cell]*config.num_layers, 
+            state_is_tuple=True)
 
         inputs = self._input.input_data
         if is_training and config.keep_prob < 1:
-            inputs = tf.nn.dropout(inputs, config.keep_prob)
+            intpus = [tf.nn.dropout(single_input, config.keep_prob) 
+                                        for single_input in inputs]
 
         self._outputs, _, _ = tf.nn.bidirectional_rnn(
-            cell_fw, cell_bw, inputs, dtype = tf.float32)
+            cell_fw, cell_bw, inputs, dtype=tf.float32)
 
         softmax_w = tf.get_variable("softmax_w", 
-            [2 * config.hidden_size, config.num_classes])
+            [2*config.hidden_size, config.num_classes])
         softmax_b = tf.get_variable("softmax_b", [config.num_classes])            
         
         if is_video:
@@ -72,30 +73,30 @@ class BiLSTM(object):
             #   num_steps * [batch_size, hidden_size] =>
             #   [batch_size * num_steps, hidden_size]
             self._outputs = tf.reshape(
-                tf.concat(1, self._outputs), [-1, 2 * config.hidden_size])
+                tf.concat(1, self._outputs), [-1, 2*config.hidden_size])
             # logit shape: [batch_size * num_steps, num_classes]
             self._logits = tf.matmul(self._outputs, softmax_w) + softmax_b
 
             loss = tf.nn.seq2seq.sequence_loss_by_example(
                 [self._logits],
                 [self._input.targets],
-                [tf.ones([config.batch_size * config.num_steps], dtype = tf.float32)])
+                [tf.ones([config.batch_size*config.num_steps], dtype=tf.float32)])
 
             self._cost = tf.reduce_sum(loss) / config.batch_size
 
         if not is_training:
             return
 
-        self._lr = tf.Variable(0.0, trainable = False)
+        self._lr = tf.Variable(0.0, trainable=False)
         self._train_op = tf.train.AdamOptimizer(
-            learning_rate = self._lr).minimize(self._cost)
+            learning_rate=self._lr).minimize(self._cost)
 
         self._new_lr = tf.placeholder(
-            tf.float32, shape = [], name = "new_learning_rate")
+            tf.float32, shape=[], name="new_learning_rate")
         self._lr_update = tf.assign(self._lr, self._new_lr)
     
     def assign_lr(self, session, lr_value):
-        session.run(self._lr_update, feed_dict = {self._new_lr: lr_value})
+        session.run(self._lr_update, feed_dict={self._new_lr: lr_value})
 
     @property
     def input(self):
