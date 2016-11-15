@@ -98,7 +98,7 @@ def main(_):
     train_data, valid_data, test_data, _ = raw_data
 
     config = Config()
-    eval_config = config
+    eval_config = Config()
     eval_config.batch_size = 1
     eval_config.num_steps = 1
 
@@ -131,8 +131,8 @@ def main(_):
                 model.assign_lr(session, config.learning_rate * lr_decay)
 
                 print("Epoch: %d Learning rate: %.3f" % (i + 1, session.run(model.lr)))
-                train_perplexity = run_epoch(session, model, eval_op = model.train_op,
-                                            verbose = True)
+                train_perplexity = run_epoch(session, model, eval_op=model.train_op,
+                                             verbose=True)
                 print("Epoch: %d Train Perplexity: %.3f" % (i + 1, train_perplexity))
                 valid_perplexity = run_epoch(session, mvalid)
                 print("Epoch: %d Valid Perplexity: %.3f" % (i + 1, valid_perplexity))
