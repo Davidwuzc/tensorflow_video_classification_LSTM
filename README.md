@@ -11,4 +11,7 @@ Steps:
     $ tar xvf simple-examples.tgz
     ```
 
-2. Run `$ python ptb_train.py --data_path=simple-examples/data/`
+2. Run `$ python ptb_train.py --data_path=simple-examples/data/ --save_path=result`
+
+    - the `data_path` option is the path to the ptb data folder
+    - the `save_path` option is the folder to store model/summary/checkpoint 

@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-import lstm_train
+from bilstm_model import BiLSTM
 from kth_data import KTHData
 
 def main(_):
