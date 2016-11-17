@@ -26,7 +26,7 @@ which is the standard TensorFlow format.
 
 1. (mandatory) set the **train_directory** parameter value to the path of your sequence of images.
 2. (mandatory) set the **validation_directory** parameter value to the path of your sequence of images.
-3. (mandatory) set the **output_directory** parameter value to the path where you want to store the data.
+3. (mandatory) set the **output_directory** parameter value to the path where you want to store the data, must create the corresponding folder first.
 4. (mandatory) set the **labels_file** parameter value to the path of your label file.
     > the label file is just a txt file containing all your action classes name
     > <br> example file (label.txt)
@@ -57,5 +57,5 @@ python convert_to_records.py
 ---
 **For my own reference**
 ```bash
-python convert_to_records.py --train_directory=/Users/dgu/Documents/projects/machine_learning/lca_data/fps_5/origin_video --output_directory=/Users/dgu/Documents/projects/machine_learning/lca_data/fps_5/result_data --label_file=/Users/dgu/Documents/projects/machine_learning/lca_data/fps_5/label --sequence_length=5
+python convert_to_records.py --train_directory=/Users/dgu/Documents/projects/machine_learning/kth_data/origin_images --output_directory=/Users/dgu/Documents/projects/machine_learning/kth_data/sharded_data --label_file=/Users/dgu/Documents/projects/machine_learning/kth_data/label.txt
 ```

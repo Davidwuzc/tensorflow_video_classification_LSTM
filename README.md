@@ -15,3 +15,10 @@ Steps:
 
     - the `data_path` option is the path to the ptb data folder
     - the `save_path` option is the folder to store model/summary/checkpoint 
+
+
+---
+
+For my personal reference
+
+`python ptb_train.py --data_path=/Users/dgu/Documents/projects/machine_learning/ptb_data --save_pth=result`

@@ -90,3 +90,5 @@ ENV/
 
 summary/
 data/
+result/
+.vscode/

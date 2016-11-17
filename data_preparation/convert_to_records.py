@@ -177,29 +177,60 @@ def _is_png(filename):
   """
   return '.png' in filename
 
+def _split(arr, size):
+  """Split an arrary according to the size parameters, the last element of the
+      output array takes the last `size` elemnts of `arr` 
+  
+  Args:
+    arr: array, input array
+    size: the size used to split the array
 
-def _process_image(foldername, coder):
-  """Process a single image file.
+  Returns:
+    sub-array
+
+  Examples:
+    _split([1,2,3,4,5,6], 5) #=> [[1,2,3,4,5], [2,3,4,5,6]]
+    _split([1,2,3,4,5,6], 3) #=> [[1,2,3], [4,5,6]]
+  """
+  arr_size = len(arr)
+  if arr_size < size:
+    raise ValueError('sequence length is too long, please set the length '
+      'smaller than the video length')
+  elif arr_size == size:
+    return arr
+
+  result = []
+  last_element = arr[-size:]
+  iter_num = arr_size//size
+  for i in range(iter_num):
+    pice = arr[:size]
+    result.append(pice)
+    arr = arr[size:]
+  # insert the last element
+  result.append(last_element)
+  return result
+
+def _process_video(foldername, coder):
+  """Process a single video file.
 
   Args:
     foldernames: string, path to a video folder e.g., '/path/to/video'.
     coder: instance of ImageCoder to provide TensorFlow image coding utils.
   Returns:
-    videos_buffer: list, contains list of video with specific sequence length. These video is actually list of strings of JPEG encoding of RGB image.
+    videos_buffer: list, contains list of video with specific sequence length.
+      These video is actually list of strings of JPEG encoding of RGB image.
     height: integer, image height in pixels.
     width: integer, image width in pixels.
   """
+  se_size = FLAGS.sequence_length
   # Read the image file.
-  videos_data = []
   images_data = []
   filenames = tf.gfile.Glob(foldername + '/*')
 
-  count = 0
   for filename in filenames:
     image_data = tf.gfile.FastGFile(filename, 'r').read()
     # Convert any PNG to JPEG's for consistency.
     if _is_png(filename):
-      # print('Converting PNG to JPEG for %s' % filename)
       image_data = coder.png_to_jpeg(image_data)
     # Decode the RGB JPEG.
     image = coder.decode_jpeg(image_data)
@@ -212,12 +243,8 @@ def _process_image(foldername, coder):
 
     # Add the image to the images data
     images_data.append(image_data)
-    count += 1
-    if count % FLAGS.sequence_length == 0:
-      videos_data.append(images_data)
-
-  if len(videos_data) == 0:
-    raise ValueError('sequence length is too long, please set the length smaller than the video length')
+  
+  videos_data = _split(images_data, se_size)
   return videos_data, height, width
 
 
@@ -241,7 +268,7 @@ def _process_image_files_batch(coder, thread_index, ranges, name, foldernames,
   # thread would produce shards [0, 64).
   num_threads = len(ranges)
   assert not num_shards % num_threads
-  num_shards_per_batch = int(num_shards / num_threads)
+  num_shards_per_batch = num_shards // num_threads
 
   shard_ranges = np.linspace(ranges[thread_index][0],
                              ranges[thread_index][1],
@@ -263,10 +290,10 @@ def _process_image_files_batch(coder, thread_index, ranges, name, foldernames,
       label = labels[i]
       text = texts[i]
 
-      videos_buffer, height, width = _process_image(foldername, coder)
+      videos_buffer, height, width = _process_video(foldername, coder)
 
-      for images_buffer in videos_buffer:
-        example = _convert_to_example(foldername, images_buffer, label,
+      for video_buffer in videos_buffer:
+        example = _convert_to_example(foldername, video_buffer, label,
                                       text, height, width)
         writer.write(example.SerializeToString())
         counter += 1

@@ -20,14 +20,14 @@ FLAGS = tf.app.flags.FLAGS
 
 class Config(object):
   """Configuration"""
-  init_scale = 0.05
-  learning_rate = 0.05
+  init_scale = 0.1
+  learning_rate = 0.5
   max_grad_norm = 5
   num_layers = 2
   num_steps = 35
   hidden_size = 200
-  max_epoch = 6
-  max_max_epoch = 39
+  max_epoch = 2
+  max_max_epoch = 6
   keep_prob = 0.8
   lr_decay = 0.8
   batch_size = 20
@@ -57,7 +57,7 @@ class PTBInput(object):
           for input_step in tf.split(1, num_steps, self.input_data)]
 
     # Data preprocessing(one hot convertion): targets
-    #   [batch_size, num_steps] => [batch_size * num_steps, num_classes]
+    #   [batch_size, num_steps] => [batch_size * num_steps]
     self.targets = tf.reshape(self.targets, [-1])
 
 def run_epoch(session, model, eval_op=None, verbose=False):
