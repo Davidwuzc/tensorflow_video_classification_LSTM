@@ -16,7 +16,7 @@ The `convert.sh` script has two paramters:
 
 Example command will be 
 ```
-sudo ./convert.sh .../video/ 20
+$ sudo ./convert.sh .../video/ 20
 ```
 
 ## Step 2 (convert_to_records.py)
@@ -44,15 +44,30 @@ is 16.
  
 ### Example usage (only compatible with python 2.x)
 
----
 ```
-python convert_to_records.py 
+$ python convert_to_records.py 
     --train_directory=.../training_data 
     --validation_directory=.../validation_data 
     --output_directory=.../result 
     --labels_file=.../label.txt 
     --sequence_length=32
 ```
+
+## Step 3
+Sum up all the print out value and write this value to `{database}_data.py` file
+
+Example:
+
+```
+Output:
+$ [thread 3]: Wrote 354 videos in total
+$ [thread 0]: Wrote 354 videos in total
+$ [thread 1]: Wrote 354 videos in total
+$ [thread 2]: Wrote 354 videos in total
+```
+
+Set the corresponding value inside `num_examples_per_epoch` function to 
+`354+354+354+354=1416`
 
 ---
 **For my own reference**
