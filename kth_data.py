@@ -12,12 +12,12 @@ class KTHData(Dataset):
 
   def num_classes(self):
     """Returns the number of classes in the data set."""
-    return 6
+    return 2
 
   def num_examples_per_epoch(self):
     """Returns the number of examples in the data subset."""
     if self.subset == 'train':
-      return 598
+      return 1497
     if self.subset == 'validation':
       return 50
 

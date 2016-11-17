@@ -7,7 +7,6 @@ from abc import abstractmethod
 import os
 
 import tensorflow as tf
-import settings
 
 FLAGS = tf.app.flags.FLAGS
 
