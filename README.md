@@ -16,9 +16,16 @@ Steps:
     - the `data_path` option is the path to the ptb data folder
     - the `save_path` option is the folder to store model/summary/checkpoint 
 
+## KTH
 
+1. Run `$ python kth_train.py --data_path=simple-examples/data/ --save_path=result`
+
+    - the `data_path` option is the path to the ptb data folder
+    - the `save_path` option is the folder to store model/summary/checkpoint 
 ---
 
 For my personal reference
 
 `python ptb_train.py --data_path=/Users/dgu/Documents/projects/machine_learning/ptb_data --save_pth=result`
+
+`python kth_train.py --data_path=/Users/dgu/Documents/projects/machine_learning/kth_data/sharded_data --save_pth=result`

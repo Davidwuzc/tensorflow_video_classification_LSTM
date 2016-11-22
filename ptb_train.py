@@ -54,7 +54,7 @@ class PTBInput(object):
         dtype=tf.float32)
     self.input_data = tf.nn.embedding_lookup(embedding, self.input_data)
     self.input_data = [tf.squeeze(input_step, [1])
-          for input_step in tf.split(1, num_steps, self.input_data)]
+      for input_step in tf.split(1, num_steps, self.input_data)]
 
     # Data preprocessing(one hot convertion): targets
     #   [batch_size, num_steps] => [batch_size * num_steps]

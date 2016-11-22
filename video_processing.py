@@ -19,11 +19,8 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-import settings
 
-FLAGS = tf.app.flags.FLAGS
-
-def inputs(dataset, batch_size=None, num_preprocess_threads=None):
+def inputs(dataset, batch_size=None, num_preprocess_threads=4):
   """ Generate batches of videos for evaluation.
 
   Use this function as the inputs for evaluating a network.
@@ -33,31 +30,27 @@ def inputs(dataset, batch_size=None, num_preprocess_threads=None):
 
   Args:
     dataset: instance of Dataset class specifying the dataset.
-    batch_size: integer, number of examples in batch, default value is 10
+    config: class, the configuration setting
     num_preprocess_threads: integer, total number of preprocessing threads
-      defaults to FLAGS.num_preprocess_threads.
+      defaults to 4.
 
   Returns:
-    videos: 2-D string Tensor of [batch_size, sequence_length] a batch of 
+    videos: 2-D string Tensor of [batch_size, num_steps] a batch of 
       video, each video is a dictionary containing strings providing 
       JPEG encoding of all the images of a video clip
-    labels: 1-D integer Tensor of [FLAGS.batch_size].
-    filenames: 1-D integer Tensor of [FLAGS.batch_size].
+    labels: 1-D integer Tensor of [batch_size].
+    filenames: 1-D integer Tensor of [batch_size].
   """
-  if not batch_size:
-    batch_size = FLAGS.batch_size
-
   # Force all input processing onto CPU in order to reserve the GPU for
   # the forward inference and back-propagation.
   with tf.device('/cpu:0'):
     videos, labels, filenames = batch_inputs(
-      dataset, batch_size, train=False,
+      dataset, config, train=False,
       num_preprocess_threads=num_preprocess_threads)
-
   return videos, labels, filenames
 
 
-def distorted_inputs(dataset, batch_size=None, num_preprocess_threads=None):
+def distorted_inputs(dataset, config, num_preprocess_threads=4):
   """ Generate batches of distorted versions of videos.
 
   Use this function as the inputs for training a network.
@@ -70,22 +63,19 @@ def distorted_inputs(dataset, batch_size=None, num_preprocess_threads=None):
     dataset: instance of Dataset class specifying the dataset.
     batch_size: integer, number of examples in batch
     num_preprocess_threads: integer, total number of preprocessing threads
-      defaults to FLAGS.num_preprocess_threads.
+      defaults to 4.
 
   Returns:
-    videos: 2-D string Tensor of [batch_size, sequence_length] a batch of 
+    videos: 2-D string Tensor of [batch_size, num_steps] a batch of 
       video, each video is a dictionary containing strings providing 
       JPEG encoding of all the images of a video clip
     labels: 1-D integer one host Tensor of [batch_size].
     filenames: 1-D integer Tensor of [batch_size].
   """
-  if not batch_size:
-    batch_size = FLAGS.batch_size
-
   # Force all input processing onto CPU in order to reserve the GPU for
   # the forward inference and back-propagation.
   videos, labels_one_hot, filenames = batch_inputs(
-    dataset, batch_size, train=True,
+    dataset, config, train=True,
     num_preprocess_threads=num_preprocess_threads)
   return videos, labels_one_hot, filenames
 
@@ -98,7 +88,7 @@ def video_preprocessing(image_features):
 
   Returns:
     resutl: 4-D float Tensor containing an appropriately list of scaled image
-      [sequence_length, encoded JPEG string]
+      [num_steps, encoded JPEG string]
 
   Raises:
     ValueError: if user does not provide bounding box
@@ -118,7 +108,7 @@ def video_preprocessing(image_features):
   result = tf.concat(0, images)
   return result
 
-def parse_example_proto(example_serialized):
+def parse_example_proto(example_serialized, num_steps):
   """ Parses an Example proto containing a training example of a video clip.
 
   The output of the convert_to_records.py video preprocessing script is a 
@@ -165,7 +155,7 @@ def parse_example_proto(example_serialized):
 
   # images data in the Example proto
   image_map = {}
-  for index in range(FLAGS.sequence_size):
+  for index in range(num_steps):
     image_map['raw/image/%03d' % index] = tf.FixedLenFeature(
     [], 
     dtype=tf.string,
@@ -177,19 +167,19 @@ def parse_example_proto(example_serialized):
       features['image/class/text'],
       features['image/filename'])
 
-def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None):
+def batch_inputs(dataset, config, train, num_preprocess_threads=4):
   """ Contruct batches of training or evaluation examples from the video 
     dataset.
 
   Args:
     dataset: instance of Dataset class specifying the dataset. See 
       dataset.py for details.
-    batch_size: integer
+    config: class, configuration
     train: boolean, shuffle the dataset or not
     num_preprocess_threads: integer, total number of preprocessing threads
 
   Returns:
-    videos: 2-D string Tensor of [batch_size, sequence_length] a batch of 
+    videos: 2-D string Tensor of [batch_size, num_steps] a batch of 
       video, each video is a dictionary containing strings providing 
       JPEG encoding of all the images of a video clip
     labels: 1-D integer Tensor of [batch_size].
@@ -199,6 +189,7 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None):
     ValueError: if data is not found
   """
   with tf.name_scope('batch_processing'):
+    batch_size = config.batch_size
     data_files = dataset.data_files()
     if data_files is None:
       raise ValueError('No data files found for this dataset')
@@ -212,16 +203,14 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None):
       filename_queue = tf.train.string_input_producer(data_files,
                             shuffle=False,
                             capacity=1)
-    if num_preprocess_threads is None:
-      num_preprocess_threads = FLAGS.num_preprocess_threads
 
     if num_preprocess_threads % 4:
       raise ValueError('Please make num_preprocess_threads a multiple '
             'of 4 (%d % 4 != 0).', num_preprocess_threads)
 
     # Approximate number of examples per shard.
-    examples_per_shard = 65
-    min_queue_examples = examples_per_shard * FLAGS.input_queue_memory_factor
+    examples_per_shard = config.examples_per_shard
+    min_queue_examples = examples_per_shard * config.input_queue_memory_factor
     if train:
       examples_queue = tf.RandomShuffleQueue(
         capacity=min_queue_examples + 3 * batch_size,
@@ -239,7 +228,7 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None):
     
     # Parse a serialized Example proto to extract the video and metadata.
     image_features, label_index, _, filename = parse_example_proto(
-      example_serialized)
+      example_serialized, config.num_steps)
     video = video_preprocessing(image_features)
     videos_and_labels_and_filenames.append([video,
                         label_index, 
@@ -255,5 +244,5 @@ def batch_inputs(dataset, batch_size, train, num_preprocess_threads=None):
     labels_one_hot = tf.one_hot(labels, dataset.num_classes(), 1, 0)
 
     return (videos, 
-        labels_one_hot,
-        tf.reshape(filename_batch, [batch_size]))
+            labels_one_hot,
+            tf.reshape(filename_batch, [batch_size]))

@@ -27,5 +27,5 @@ class KTHData(Dataset):
     print('Failed to find any KTH %s files'% self.subset)
     print('')
     print('If you have already downloaded and processed the data, then make '
-          'sure to set --data_dir to point to the directory containing the '
+          'sure to set --data_path to point to the directory containing the '
           'location of the sharded TFRecords.\n')
