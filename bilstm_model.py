@@ -68,7 +68,7 @@ class BiLSTM(object):
       self._logits = tf.matmul(self._outputs[-1], softmax_w) + softmax_b
       # Required targets shape: [batch_size, num_classes] (one hot vector)
       self._cost = tf.reduce_mean(
-        tf.nn.softmax_cross_entropy_with_logits(_logits, self._input.targets))
+        tf.nn.softmax_cross_entropy_with_logits(self._logits, self._input.targets))
     else:
       # Tranformthe outputs
       #   num_steps * [batch_size, hidden_size] =>

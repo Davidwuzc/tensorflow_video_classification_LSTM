@@ -26,6 +26,6 @@ Steps:
 
 For my personal reference
 
-`python ptb_train.py --data_path=/Users/dgu/Documents/projects/machine_learning/ptb_data --save_pth=result`
+`python ptb_train.py --data_path=/Users/dgu/Documents/projects/machine_learning/ptb_data --save_path=result`
 
-`python kth_train.py --data_path=/Users/dgu/Documents/projects/machine_learning/kth_data/sharded_data --save_pth=result`
+`python kth_train.py --data_path=/Users/dgu/Documents/projects/machine_learning/kth_data/sharded_data --save_path=result`

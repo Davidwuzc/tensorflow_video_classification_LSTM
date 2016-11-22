@@ -20,6 +20,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 
+
 def inputs(dataset, batch_size=None, num_preprocess_threads=4):
   """ Generate batches of videos for evaluation.
 
@@ -79,6 +80,7 @@ def distorted_inputs(dataset, config, num_preprocess_threads=4):
     num_preprocess_threads=num_preprocess_threads)
   return videos, labels_one_hot, filenames
 
+
 def video_preprocessing(image_features):
   """ Transfer dictionary to tensor type
 
@@ -107,6 +109,7 @@ def video_preprocessing(image_features):
     images[idx] = tf.expand_dims(image, 0)
   result = tf.concat(0, images)
   return result
+
 
 def parse_example_proto(example_serialized, num_steps):
   """ Parses an Example proto containing a training example of a video clip.
@@ -166,6 +169,7 @@ def parse_example_proto(example_serialized, num_steps):
       label,
       features['image/class/text'],
       features['image/filename'])
+
 
 def batch_inputs(dataset, config, train, num_preprocess_threads=4):
   """ Contruct batches of training or evaluation examples from the video 

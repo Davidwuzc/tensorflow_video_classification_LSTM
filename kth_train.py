@@ -5,6 +5,8 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+import time
+import numpy as np
 
 from bilstm_model import BiLSTM
 from kth_data import KTHData
@@ -13,6 +15,10 @@ import video_processing as vp
 tf.app.flags.DEFINE_string("data_path", None,
           "Where the training/validation data is stored.")
 tf.app.flags.DEFINE_string("save_path", None,
+          "Model output directory.")
+tf.app.flags.DEFINE_string("image_height", 150,
+          "Model output directory.")
+tf.app.flags.DEFINE_string("image_width", 100,
           "Model output directory.")
 FLAGS = tf.app.flags.FLAGS
 
@@ -35,6 +41,7 @@ class Config(object):
   examples_per_shard = 23
   input_queue_memory_factor = 2
 
+
 def decode_jpeg(image_buffer, scope=None):
   """Decode a JPEG string into one 3-D float image Tensor.
   Args:
@@ -54,7 +61,28 @@ def decode_jpeg(image_buffer, scope=None):
     # until the very end, when they're rescaled to (-1, 1).  The various
     # adjust_* ops all require this range for dtype float.
     image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+    
+    # Crop the central region of the image with an area containing 87.5% of
+    # the original image.
+    image = tf.image.central_crop(image, central_fraction=0.875)
+
+    # Resize the image to the original height and width.
+    image = tf.expand_dims(image, 0)
+    image = tf.image.resize_bilinear(image, [FLAGS.image_height, FLAGS.image_width],
+                                     align_corners=False)
+    image = tf.squeeze(image, [0])
     return image
+
+
+def decode_video(video_buffer):
+  """Decode list of string Tensor into list of 3-D float image Tensor.
+  Args:
+    video_buffer: tensor, shape [num_steps].
+  Returns:
+    list of 3-D float Tensor with values ranging from [0, 1).
+  """
+  # Decode the images of one video
+  return tf.map_fn(decode_jpeg, video_buffer, dtype=tf.float32)
 
 
 class KTHInput(object):
@@ -69,13 +97,14 @@ class KTHInput(object):
 
     # Data preprocessing: input_data
     #  string tensor [batch_size, num_steps] => 
-    #    [batch_size, num_steps, height, width, channels]
-    self.input_data = tf.map_fn(decode_jpeg, self.input_data)
+    #    num_steps * [batch_size, height*width*channels]
+    self.input_data = tf.map_fn(decode_video, self.input_data, dtype=tf.float32)
     self.input_data = tf.reshape(self.input_data, [batch_size, num_steps, -1])
     self.input_data = [tf.squeeze(input_step, [1])
       for input_step in tf.split(1, num_steps, self.input_data)]
 
-def run_epoch(self, model, eval_op=None, verbose=False):
+
+def run_epoch(session, model, eval_op=None, verbose=False):
   """Runs the model on the given data."""
   start_time = time.time()
   costs = 0.0
@@ -119,7 +148,7 @@ def main(_):
     with tf.name_scope('Train'):
       with tf.variable_scope('Model', reuse=None, initializer=initializer):
         train_input = KTHInput(config=config, data=train_data)
-        model = BiLSTM(True, train_input, config)
+        model = BiLSTM(True, train_input, config, is_video=True)
       tf.scalar_summary("Training Loss", model.cost)
       tf.scalar_summary("Learning Rate", model.lr)
 
