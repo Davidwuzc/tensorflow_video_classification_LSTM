@@ -18,7 +18,7 @@ class LCAData(Dataset):
   def num_examples_per_epoch(self):
     """Returns the number of examples in the data subset."""
     if self.subset == 'train':
-      return 3716
+      return 5574
     if self.subset == 'validation':
       return 400
 

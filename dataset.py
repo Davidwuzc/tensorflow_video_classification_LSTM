@@ -7,8 +7,10 @@ from abc import abstractmethod
 import os
 
 import tensorflow as tf
+import video_processing as vp
 
 FLAGS = tf.app.flags.FLAGS
+
 
 class Dataset(object):
   """A simple class for handling data sets."""

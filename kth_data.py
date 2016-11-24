@@ -4,6 +4,7 @@ from __future__ import print_function
 
 from dataset import Dataset
 
+
 class KTHData(Dataset):
   """KTH dataset."""
 
