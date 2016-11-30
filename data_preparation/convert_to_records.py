@@ -450,6 +450,9 @@ def main(unused_argv):
       'Please make the FLAGS.num_threads commensurate with '
       'FLAGS.validation_shards')
   print('Saving results to %s' % FLAGS.output_directory)
+  # Create output directory
+  if not os.path.exists(FLAGS.output_directory):
+      os.makedirs(FLAGS.output_directory)
 
   # Run it!
   #_process_dataset('validation', FLAGS.validation_directory,

@@ -20,8 +20,16 @@ Steps:
 
 1. Run `$ python kth_train.py --data_path=simple-examples/data/ --save_path=result`
 
-    - the `data_path` option is the path to the ptb data folder
-    - the `save_path` option is the folder to store model/summary/checkpoint 
+    - the `data_path` option is the path to the kth data folder
+    - the `save_path` option is the folder to store model/summary/checkpoint
+
+## LCA
+
+1. Run `$ python lca_train.py --data_path=simple-examples/data/ --save_path=result`
+
+    - the `data_path` option is the path to the lca data folder
+    - the `save_path` option is the folder to store model/summary/checkpoint
+ 
 ---
 
 For my personal reference
