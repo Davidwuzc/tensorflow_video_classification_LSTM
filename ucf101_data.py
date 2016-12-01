@@ -18,7 +18,7 @@ class UCF101Data(Dataset):
   def num_examples_per_epoch(self):
     """Returns the number of examples in the data subset."""
     if self.subset == 'train':
-      return 1497
+      return 106416
     if self.subset == 'validation':
       return 50
 

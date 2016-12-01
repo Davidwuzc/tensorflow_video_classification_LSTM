@@ -74,7 +74,7 @@ tf.app.flags.DEFINE_integer('train_shards', 64,
                             'Number of shards in training TFRecord files.')
 tf.app.flags.DEFINE_integer('validation_shards', 8,
                             'Number of shards in validation TFRecord files.')
-tf.app.flags.DEFINE_integer('sequence_length', 16,
+tf.app.flags.DEFINE_integer('sequence_length', 5,
                             'The length of one video clips ')
 
 tf.app.flags.DEFINE_integer('num_threads', 4,
@@ -84,6 +84,7 @@ tf.app.flags.DEFINE_boolean('sequence_random', True,
 
 
 FLAGS = tf.app.flags.FLAGS
+
 
 def _int64_feature(value):
   """Wrapper for inserting int64 features into Example proto."""
@@ -177,6 +178,7 @@ def _is_png(filename):
   """
   return '.png' in filename
 
+
 def _split(arr, size):
   """Split an arrary according to the size parameters, the last element of the
       output array takes the last `size` elemnts of `arr` 
@@ -243,6 +245,9 @@ def _process_video(foldername, coder):
 
     # Add the image to the images data
     images_data.append(image_data)
+  
+  if len(images_data) < se_size:
+    print(foldername)
   
   videos_data = _split(images_data, se_size)
   return videos_data, height, width

@@ -29,7 +29,7 @@ class Config(object):
     self.num_layers = 2
     # num_steps: This value must be the same as the sequence_length value
     #  inside the data/convert_to_records.py when you generate the data.
-    self.num_steps = 16
+    self.num_steps = 5
     self.hidden_size = 200
     self.max_epoch = 2
     self.max_max_epoch = 6
