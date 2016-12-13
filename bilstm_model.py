@@ -46,7 +46,7 @@ class BiLSTM(object):
 
     if is_training and config.keep_prob < 1:
       inputs = [tf.nn.dropout(single_input, config.keep_prob) 
-                    for single_input in inputs_.input_data]
+                    for single_input in self._input.bilstm_inputs]
 
     self._outputs, _, _ = tf.nn.bidirectional_rnn(
       cell_fw, cell_bw, inputs, dtype=tf.float32)

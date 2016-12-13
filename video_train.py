@@ -11,10 +11,15 @@ from c3d_model import C3D
 
 FLAGS = tf.app.flags.FLAGS
 
+
 def _variable_on_cpu(name, shape, initializer):
   #with tf.device('/cpu:%d' % cpu_id):
   with tf.device('/cpu:0'):
-    var = tf.get_variable(name, shape, initializer=initializer)
+    try:
+      var = tf.get_variable(name, shape, initializer=initializer)
+    except ValueError:
+      tf.get_variable_scope().reuse_variables()
+      var = tf.get_variable(name)
   return var
 
 
@@ -32,33 +37,31 @@ def feature_extract(config, c3d_data):
       config: configuration setting, include the c3d weights and the biases
       c3d_data: Tensor, [batch_size, c3d_num_steps, height, width, channels]
     Return:
-      output: Tensor, [batch_size, 4096]
+      output: Tensor, [batch_size, 120]
   """
-  with tf.variable_scope('C3d_var'):
-    weights = {
-            'wc1': _variable_with_weight_decay('wc1', [3, 3, 3, 3, 64], 0.04, 0.00),
-            'wc2': _variable_with_weight_decay('wc2', [3, 3, 3, 64, 128], 0.04, 0.00),
-            'wc3a': _variable_with_weight_decay('wc3a', [3, 3, 3, 128, 256], 0.04, 0.00),
-            'wc3b': _variable_with_weight_decay('wc3b', [3, 3, 3, 256, 256], 0.04, 0.00),
-            'wc4a': _variable_with_weight_decay('wc4a', [3, 3, 3, 256, 512], 0.04, 0.00),
-            'wc4b': _variable_with_weight_decay('wc4b', [3, 3, 3, 512, 512], 0.04, 0.00),
-            'wc5a': _variable_with_weight_decay('wc5a', [3, 3, 3, 512, 512], 0.04, 0.00),
-            'wc5b': _variable_with_weight_decay('wc5b', [3, 3, 3, 512, 512], 0.04, 0.00),
-            'wd1': _variable_with_weight_decay('wd1', [8192, 4096], 0.04, 0.001),
-            }
-    biases = {
-            'bc1': _variable_with_weight_decay('bc1', [64], 0.04, 0.0),
-            'bc2': _variable_with_weight_decay('bc2', [128], 0.04, 0.0),
-            'bc3a': _variable_with_weight_decay('bc3a', [256], 0.04, 0.0),
-            'bc3b': _variable_with_weight_decay('bc3b', [256], 0.04, 0.0),
-            'bc4a': _variable_with_weight_decay('bc4a', [512], 0.04, 0.0),
-            'bc4b': _variable_with_weight_decay('bc4b', [512], 0.04, 0.0),
-            'bc5a': _variable_with_weight_decay('bc5a', [512], 0.04, 0.0),
-            'bc5b': _variable_with_weight_decay('bc5b', [512], 0.04, 0.0),
-            'bd1': _variable_with_weight_decay('bd1', [4096], 0.04, 0.0),
-            }
+  weights = {
+          'wc1': _variable_with_weight_decay('wc1', [3, 3, 3, 3, 7], 0.04, 0.00),
+          'wc2': _variable_with_weight_decay('wc2', [3, 3, 3, 7, 14], 0.04, 0.00),
+          'wc3a': _variable_with_weight_decay('wc3a', [3, 3, 3, 14, 28], 0.04, 0.00),
+          'wc3b': _variable_with_weight_decay('wc3b', [3, 3, 3, 28, 28], 0.04, 0.00),
+          'wc4a': _variable_with_weight_decay('wc4a', [3, 3, 3, 28, 56], 0.04, 0.00),
+          'wc4b': _variable_with_weight_decay('wc4b', [3, 3, 3, 56, 56], 0.04, 0.00),
+          'wc5a': _variable_with_weight_decay('wc5a', [3, 3, 3, 56, 56], 0.04, 0.00),
+          'wc5b': _variable_with_weight_decay('wc5b', [3, 3, 3, 56, 56], 0.04, 0.00),
+          'wd1': _variable_with_weight_decay('wd1', [896, 120], 0.04, 0.001),
+          }
+  biases = {
+          'bc1': _variable_with_weight_decay('bc1', [7], 0.04, 0.0),
+          'bc2': _variable_with_weight_decay('bc2', [14], 0.04, 0.0),
+          'bc3a': _variable_with_weight_decay('bc3a', [28], 0.04, 0.0),
+          'bc3b': _variable_with_weight_decay('bc3b', [28], 0.04, 0.0),
+          'bc4a': _variable_with_weight_decay('bc4a', [56], 0.04, 0.0),
+          'bc4b': _variable_with_weight_decay('bc4b', [56], 0.04, 0.0),
+          'bc5a': _variable_with_weight_decay('bc5a', [56], 0.04, 0.0),
+          'bc5b': _variable_with_weight_decay('bc5b', [56], 0.04, 0.0),
+          'bd1': _variable_with_weight_decay('bd1', [120], 0.04, 0.0),
+          }
   c3d_model = C3D(c3d_data, config.keep_prob, config.batch_size, weights, biases)
-  tf.get_variable_scope().reuse_variables()
   return c3d_model.output
 
 
@@ -83,7 +86,8 @@ def run_epoch(session, model, eval_op=None, verbose=False):
     costs += cost
     iters += model.input.num_steps
 
-    if verbose and step % 10 == 9:
+    # if verbose and step % 10 == 9:
+    if verbose:
       print("accuracy: %.3f" % accuracy)
       print("%.3f -- perplexity: %.3f -- speed: %.0f vps" %
           (step * 1.0 / model.input.epoch_size,
@@ -108,11 +112,13 @@ def train(config, data):
       c3d_inputs = [clip for clip in tf.split(1, 
                                               config.num_steps/config.c3d_num_steps,
                                               train_input.input_data)]
-      with tf.variable_scope('LSTM_Var', reuse=None, initializer=initializer):
+      with tf.variable_scope('Model_Var', reuse=None, initializer=initializer):
         # bilstm_inputs: (num_steps/c3d_num_steps) * [batch_size, input_num(features)]
-        train_input.input_data = [feature_extract(config, c3d_input) 
-                                    for c3d_input in c3d_inputs] 
-      model = BiLSTM(True, train_input, config, is_video=True)
+        with tf.variable_scope('C3D_Var'):
+          train_input.bilstm_inputs = [feature_extract(config, c3d_input) 
+                                        for c3d_input in c3d_inputs]
+        with tf.variable_scope('BiLSTM_Var'):
+          model = BiLSTM(True, train_input, config, is_video=True)
       tf.scalar_summary("Training Loss", model.cost)
       tf.scalar_summary("Learning Rate", model.lr)
 
