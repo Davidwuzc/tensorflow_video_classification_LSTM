@@ -6,30 +6,24 @@ import tensorflow as tf
 
 FLAGS = tf.app.flags.FLAGS
 
-# ----------------------------------------------------------------------------
-# LSTM Model
-# ----------------------------------------------------------------------------
+
 class BiLSTM(object):
   """Bidirectional LSTM neural network.
 
   Use this function to create the bidirection LSTM nerual network model
 
   Args:
-    input_: DataInput class, 
-      input_data: List, a list of tensor placeholder that represent 
-        batches of input data required shape. 
-        Size: num_steps * [batch_size, hidden_size]
+    is_training: Boolean, whether to apply a dropout layer or not
+    inputs_: video_input class instance 
+      input_data: List, (num_steps/c3d_num_steps) * [batch_size, input_num(features)]
       targets: Tensor, corresponding one hot vector groudtrue for 
         input, Size:[batch_size, num_classes] 
-    is_training: Boolean, whether to apply a dropout layer or not
     config: configuration file
     is_video: Boolean, whether the input is a video or not, default is
       false
   """
-
-  def __init__(self, is_training, input_, config, is_video=False):
-    self._input = input_
-
+  def __init__(self, is_training, inputs_, config, is_video=False):
+    self._input = inputs_
     # Define lstm cells with tensorflow
     # Forward direction cell
     lstm_fw_cell = tf.nn.rnn_cell.BasicLSTMCell(config.hidden_size,
@@ -50,14 +44,13 @@ class BiLSTM(object):
       [lstm_fw_cell]*config.num_layers, 
       state_is_tuple=True)
 
-    inputs = self._input.input_data
     if is_training and config.keep_prob < 1:
-      intpus = [tf.nn.dropout(single_input, config.keep_prob) 
-                    for single_input in inputs]
+      inputs = [tf.nn.dropout(single_input, config.keep_prob) 
+                    for single_input in inputs_.input_data]
 
     self._outputs, _, _ = tf.nn.bidirectional_rnn(
       cell_fw, cell_bw, inputs, dtype=tf.float32)
-
+    
     softmax_w = tf.get_variable("softmax_w", 
       [2*config.hidden_size, config.num_classes])
     softmax_b = tf.get_variable("softmax_b", [config.num_classes])            

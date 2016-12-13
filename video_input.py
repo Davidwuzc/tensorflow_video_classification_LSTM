@@ -20,10 +20,14 @@ class DataInput(object):
 
     # Data preprocessing: input_data
     #  string tensor [batch_size, num_steps] =>
-    #    num_steps * [batch_size, height*width*channels]
+    #    [batch_size, num_steps, height, width, channels]
     self.input_data = tf.map_fn(
       vp.decode_video, self.input_data, dtype=tf.float32)
-    self.input_data = tf.reshape(
-      self.input_data, [batch_size, num_steps, -1])
-    self.input_data = [tf.squeeze(input_step, [1])
-               for input_step in tf.split(1, num_steps, self.input_data)]
+
+    # Reference
+    #  string tensor [batch_size, num_steps, height, width, channels] =>
+    #    num_steps * [batch_size, height*width*channels]
+    # self.input_data = tf.reshape(
+    #   self.input_data, [batch_size, num_steps, -1])
+    # self.input_data = [tf.squeeze(input_step, [1])
+    #            for input_step in tf.split(1, num_steps, self.input_data)]

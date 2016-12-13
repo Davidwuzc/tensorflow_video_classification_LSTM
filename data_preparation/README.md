@@ -86,7 +86,7 @@ remove the `.DS_Store` file in the video folder
 find . -name '.DS_Store' -type f -delete
 ```
 
-- ucf
+- ucf101
 ```bash
-python convert_to_records.py --train_directory=/Users/dgu/Documents/projects/machine_learning/ucf101_data/origin_images --output_directory=/Users/dgu/Documents/projects/machine_learning/ucf101_data/sharded_data --label_file=/Users/dgu/Documents/projects/machine_learning/ucf101_data/label
+python convert_to_records.py --train_directory=/Volumes/passport/datasets/action_ucf101/origin_images --output_directory=/Volumes/passport/datasets/action_ucf101/sharded_data --label_file=/Volumes/passport/datasets/action_ucf101/label
 ```

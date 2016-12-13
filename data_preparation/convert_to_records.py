@@ -74,7 +74,7 @@ tf.app.flags.DEFINE_integer('train_shards', 64,
                             'Number of shards in training TFRecord files.')
 tf.app.flags.DEFINE_integer('validation_shards', 8,
                             'Number of shards in validation TFRecord files.')
-tf.app.flags.DEFINE_integer('sequence_length', 5,
+tf.app.flags.DEFINE_integer('sequence_length', 108,
                             'The length of one video clips ')
 
 tf.app.flags.DEFINE_integer('num_threads', 4,
@@ -294,6 +294,11 @@ def _process_image_files_batch(coder, thread_index, ranges, name, foldernames,
       foldername = foldernames[i]
       label = labels[i]
       text = texts[i]
+
+      # Skip the video folder that has less images than sequence_length 
+      if len(os.listdir(foldername)) < FLAGS.sequence_length:
+        # print(len(os.listdir(foldername)))
+        continue
 
       videos_buffer, height, width = _process_video(foldername, coder)
 

@@ -12,9 +12,11 @@ tf.app.flags.DEFINE_string("data_path", None,
                "Where the training/validation data is stored.")
 tf.app.flags.DEFINE_string("save_path", None,
                "Model output directory.")
-tf.app.flags.DEFINE_string("image_height", 113,
+tf.app.flags.DEFINE_string("model_path", None,
+               "c3d model path.")               
+tf.app.flags.DEFINE_string("image_height", 112,
                "Model output directory.")
-tf.app.flags.DEFINE_string("image_width", 113,
+tf.app.flags.DEFINE_string("image_width", 112,
                "Model output directory.")
 FLAGS = tf.app.flags.FLAGS
 
@@ -29,7 +31,9 @@ class Config(object):
     self.num_layers = 2
     # num_steps: This value must be the same as the sequence_length value
     #  inside the data/convert_to_records.py when you generate the data.
-    self.num_steps = 5
+    self.num_steps = 108
+    # (num_steps % c3d_num_steps) must equal to 0
+    self.c3d_num_steps = 9
     self.hidden_size = 200
     self.max_epoch = 2
     self.max_max_epoch = 6

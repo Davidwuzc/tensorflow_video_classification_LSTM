@@ -39,3 +39,5 @@ For my personal reference
 `python kth_train.py --data_path=/Users/dgu/Documents/projects/machine_learning/kth_data/sharded_data --save_path=result`
 
 `python lca_train.py --data_path=/Users/dgu/Documents/projects/machine_learning/lca_data/sharded_data --save_path=result`
+
+`python ucf101_train.py --data_path=/Volumes/passport/datasets/action_ucf101/sharded_data --save_path=result`
