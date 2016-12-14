@@ -36,7 +36,7 @@ For my personal reference
 
 `python ptb_train.py --data_path=/Users/dgu/Documents/projects/machine_learning/ptb_data --save_path=result`
 
-`python kth_train.py --data_path=/Users/dgu/Documents/projects/machine_learning/kth_data/sharded_data --save_path=result`
+`python kth_train.py --data_path=/Volumes/passport/datasets/action_kth/sharded_data --save_path=result`
 
 `python lca_train.py --data_path=/Users/dgu/Documents/projects/machine_learning/lca_data/sharded_data --save_path=result`
 

@@ -18,12 +18,12 @@ class KTHData(Dataset):
   def num_examples_per_epoch(self):
     """Returns the number of examples in the data subset."""
     if self.subset == 'train':
-      return 1497
+      return 2981
     if self.subset == 'validation':
       return 50
 
   def download_message(self):
-    """Instruction to download and extract the tarball from Flowers website."""
+    """Instruction to download and extract the tarball from KTH website."""
 
     print('Failed to find any KTH %s files'% self.subset)
     print('')

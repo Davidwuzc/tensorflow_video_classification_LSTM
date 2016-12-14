@@ -71,19 +71,20 @@ Set the corresponding value inside `num_examples_per_epoch` function to
 
 ---
 **For my own reference**
-- kth
-```bash
-python convert_to_records.py --train_directory=/Users/dgu/Documents/projects/machine_learning/kth_data/origin_images --output_directory=/Users/dgu/Documents/projects/machine_learning/kth_data/sharded_data --label_file=/Users/dgu/Documents/projects/machine_learning/kth_data/label.txt
-```
-
-- lca
-```bash
-python convert_to_records.py --train_directory=/Users/dgu/Documents/projects/machine_learning/lca_data/origin_images --output_directory=/Users/dgu/Documents/projects/machine_learning/lca_data/sharded_data --label_file=/Users/dgu/Documents/projects/machine_learning/lca_data/label
-```
 
 remove the `.DS_Store` file in the video folder
 ```
 find . -name '.DS_Store' -type f -delete
+```
+
+- kth
+```bash
+python convert_to_records.py --train_directory=/Volumes/passport/datasets/action_kth/origin_images --output_directory=/Volumes/passport/datasets/action_kth/sharded_data --label_file=/Volumes/passport/datasets/action_kth/label
+```
+
+- lca
+```bash
+python convert_to_records.py --train_directory=/Volumes/passport/datasets/action_lca/origin_images --output_directory=/Volumes/passport/datasets/action_lca/sharded_data --label_file=/Volumes/passport/datasets/action_lca/label
 ```
 
 - ucf101

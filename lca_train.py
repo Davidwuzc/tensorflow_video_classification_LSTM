@@ -29,7 +29,9 @@ class Config(object):
     self.num_layers = 2
     # num_steps: This value must be the same as the sequence_length value
     #  inside the data/convert_to_records.py when you generate the data.
-    self.num_steps = 16
+    self.num_steps = 108
+    # (num_steps % c3d_num_steps) must equal to 0
+    self.c3d_num_steps = 9
     self.hidden_size = 200
     self.max_epoch = 2
     self.max_max_epoch = 6
@@ -39,6 +41,29 @@ class Config(object):
     self.examples_per_shard = 23
     self.input_queue_memory_factor = 2
 
+    # C3D parameters
+    self.c3d_weights = {
+      'wc1': [3, 3, 3, 3, 7],
+      'wc2': [3, 3, 3, 7, 14],
+      'wc3a': [3, 3, 3, 14, 28],
+      'wc3b': [3, 3, 3, 28, 28],
+      'wc4a': [3, 3, 3, 28, 56],
+      'wc4b': [3, 3, 3, 56, 56],
+      'wc5a':  [3, 3, 3, 56, 56],
+      'wc5b':  [3, 3, 3, 56, 56],
+      'wd1': [896, 120]
+    }
+    self.c3d_biases = {
+      'bc1': [7],
+      'bc2': [14],
+      'bc3a': [28],
+      'bc3b': [28],
+      'bc4a': [56],
+      'bc4b': [56],
+      'bc5a': [56],
+      'bc5b': [56],
+      'bd1': [120]
+    }
 
 def main(_):
   """Mian function to train the LCA dataset"""
