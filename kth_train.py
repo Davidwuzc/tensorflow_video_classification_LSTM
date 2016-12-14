@@ -32,7 +32,7 @@ class Config(object):
     self.num_steps = 108
     # (num_steps % c3d_num_steps) must equal to 0
     self.c3d_num_steps = 9
-    self.hidden_size = 200
+    self.hidden_size = 50
     self.max_epoch = 2
     self.max_max_epoch = 6
     self.keep_prob = 0.8

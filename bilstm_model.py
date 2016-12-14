@@ -22,6 +22,7 @@ class BiLSTM(object):
     is_video: Boolean, whether the input is a video or not, default is
       false
   """
+
   def __init__(self, is_training, inputs_, config, is_video=False):
     self._input = inputs_
     # Define lstm cells with tensorflow
@@ -87,7 +88,7 @@ class BiLSTM(object):
 
     self._lr = tf.Variable(0.0, trainable=False)
     self._train_op = tf.train.AdamOptimizer(
-      learning_rate=self._lr).minimize(self._cost)
+      learning_rate=self._lr).minimize(self._cost, global_step=tf.contrib.framework.get_or_create_global_step())
 
     self._new_lr = tf.placeholder(
       tf.float32, shape=[], name="new_learning_rate")

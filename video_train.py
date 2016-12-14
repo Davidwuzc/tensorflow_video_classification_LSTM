@@ -7,7 +7,7 @@ import tensorflow as tf
 import numpy as np
 from video_input import DataInput
 from bilstm_model import BiLSTM
-from c3d_model import C3D
+import c3d_model
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -79,8 +79,9 @@ def feature_extract(config, c3d_data):
           'bd1': _variable_with_weight_decay('bd1',
                                              config.c3d_biases['bd1'], 0.04, 0.0),
           }
-  c3d_model = C3D(c3d_data, config.keep_prob, config.batch_size, weights, biases)
-  return c3d_model.output
+  output = c3d_model.inference_c3d(c3d_data, config.keep_prob, 
+                                   config.batch_size, weights, biases)
+  return output
 
 
 def run_epoch(session, model, eval_op=None, verbose=False):
@@ -126,10 +127,11 @@ def train(config, data):
                                                 config.init_scale)
     with tf.name_scope('Train'):
       train_input = DataInput(config=config, data=data)
-        # c3d_intput: (num_steps/c3d_num_steps) * [batch_size, c3d_num_steps, height, width, channels]
+      # c3d_intput: (num_steps/c3d_num_steps) * [batch_size, c3d_num_steps, height, width, channels]
       c3d_inputs = [clip for clip in tf.split(1, 
                                               config.num_steps/config.c3d_num_steps,
                                               train_input.input_data)]
+      tf.image_summary("Images", tf.squeeze(tf.split(1, 9, c3d_inputs[0])[0]), max_images=20)
       with tf.variable_scope('Model_Var', reuse=None, initializer=initializer):
         # bilstm_inputs: (num_steps/c3d_num_steps) * [batch_size, input_num(features)]
         with tf.variable_scope('C3D_Var'):
@@ -157,4 +159,4 @@ def train(config, data):
       if FLAGS.save_path:
         print("Saving model to %s." % FLAGS.save_path)
         sv.saver.save(session, FLAGS.save_path,
-                global_step=sv.global_step)
+                      global_step=sv.global_step)
