@@ -13,7 +13,6 @@ FLAGS = tf.app.flags.FLAGS
 
 
 def _variable_on_cpu(name, shape, initializer):
-  #with tf.device('/cpu:%d' % cpu_id):
   with tf.device('/cpu:0'):
     try:
       var = tf.get_variable(name, shape, initializer=initializer)
@@ -103,7 +102,7 @@ def run_epoch(session, model, eval_op=None, verbose=False):
     accuracy = vals["accuracy"]
 
     costs += cost
-    iters += model.input.num_steps
+    iters += model.input.batch_size
 
     # if verbose and step % 10 == 9:
     if verbose:
@@ -131,7 +130,7 @@ def train(config, data):
       c3d_inputs = [clip for clip in tf.split(1, 
                                               config.num_steps/config.c3d_num_steps,
                                               train_input.input_data)]
-      tf.image_summary("Images", tf.squeeze(tf.split(1, 9, c3d_inputs[0])[0]), max_images=20)
+      tf.image_summary("origin", tf.squeeze(tf.split(1, 9, c3d_inputs[0])[0]), max_images=20)
       with tf.variable_scope('Model_Var', reuse=None, initializer=initializer):
         # bilstm_inputs: (num_steps/c3d_num_steps) * [batch_size, input_num(features)]
         with tf.variable_scope('C3D_Var'):
@@ -141,13 +140,14 @@ def train(config, data):
           model = BiLSTM(True, train_input, config, is_video=True)
       tf.scalar_summary("Training Loss", model.cost)
       tf.scalar_summary("Learning Rate", model.lr)
+      tf.scalar_summary("Accuracy", model.accuracy)
 
     sv = tf.train.Supervisor(logdir=FLAGS.save_path)
     with sv.managed_session() as session:
       for i in range(config.max_max_epoch):
         # Check if the one hot label is correct for corresponding image
-        # a,b,c=session.run([train_input.filenames,train_input.labels,train_input.targets])
-        # print("a:{} b:{} c:{}".format(a, b, c))
+        # a,b=session.run([train_input.filenames,train_input.targets])
+        # print("a:{} b:{}".format(a, b))
 
         lr_decay = config.lr_decay ** max(i - config.max_epoch, 0.0)
         model.assign_lr(session, config.learning_rate * lr_decay)

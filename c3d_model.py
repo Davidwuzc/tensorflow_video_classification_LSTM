@@ -12,7 +12,7 @@ def inference_c3d(_inputs, _dropout, batch_size, _weights, _biases):
   as far as is required for running the network forward to make predictions.
 
   Args:
-    _inputs: Size: [batch_size, num_steps, height, width, channels]
+    _inputs: Size: [batch_size, c3d_num_steps, height, width, channels]
     _dropout: Float, the probability to keep the ValueError
     batch_size: Integer
     _weights: Dictionary, cotains all the weight variables
@@ -20,11 +20,13 @@ def inference_c3d(_inputs, _dropout, batch_size, _weights, _biases):
   """
   # Convolution Layer
   conv1 = _conv3d('conv1', _inputs, _weights['wc1'], _biases['bc1'])
+  tf.image_summary('conv1', tf.split(1, 9, conv1)[0], max_images=20)
   conv1 = tf.nn.relu(conv1, 'relu1')
   pool1 = _max_pool('pool1', conv1, k=1)
 
   # Convolution Layer
   conv2 = _conv3d('conv2', pool1, _weights['wc2'], _biases['bc2'])
+  tf.image_summary('conv2', tf.split(1, 9, conv2)[0], max_images=20)
   conv2 = tf.nn.relu(conv2, 'relu2')
   pool2 = _max_pool('pool2', conv2, k=2)
 

@@ -16,6 +16,8 @@ tf.app.flags.DEFINE_string("image_height", 112,
                "Model output directory.")
 tf.app.flags.DEFINE_string("image_width", 112,
                "Model output directory.")
+tf.app.flags.DEFINE_string("image_channel", 3,
+               "Model output directory.")
 FLAGS = tf.app.flags.FLAGS
 
 
@@ -24,7 +26,7 @@ class Config(object):
   def __init__(self):
     """Configuration"""
     self.init_scale = 0.1
-    self.learning_rate = 0.5
+    self.learning_rate = 0.01
     self.max_grad_norm = 5
     self.num_layers = 2
     # num_steps: This value must be the same as the sequence_length value
@@ -43,7 +45,7 @@ class Config(object):
 
     # C3D parameters
     self.c3d_weights = {
-      'wc1': [3, 3, 3, 3, 7],
+      'wc1': [3, 3, 3, FLAGS.image_channel, 7],
       'wc2': [3, 3, 3, 7, 14],
       'wc3a': [3, 3, 3, 14, 28],
       'wc3b': [3, 3, 3, 28, 28],
@@ -51,7 +53,7 @@ class Config(object):
       'wc4b': [3, 3, 3, 56, 56],
       'wc5a':  [3, 3, 3, 56, 56],
       'wc5b':  [3, 3, 3, 56, 56],
-      'wd1': [896, 120]
+      'wd1': [896, 200]
     }
     self.c3d_biases = {
       'bc1': [7],
