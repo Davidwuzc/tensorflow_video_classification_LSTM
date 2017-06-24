@@ -8,8 +8,8 @@ import time
 import numpy as np
 import tensorflow as tf
 
-from bilstm_model import BiLSTM
-import ptb_data
+from data import ptb_data
+from model.bilstm_model import BiLSTM
 
 tf.app.flags.DEFINE_string("data_path", None,
           "Where the training/test data is stored.")

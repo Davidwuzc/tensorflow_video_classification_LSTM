@@ -4,9 +4,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
-from kth_data import KTHData
 import video_train
+import tensorflow as tf
+
+from data.kth_data import KTHData
 
 tf.app.flags.DEFINE_string("data_path", None,
                "Where the training/validation data is stored.")

@@ -3,10 +3,10 @@ from __future__ import division
 from __future__ import print_function
 
 import time
-import tensorflow as tf
 import numpy as np
-from video_input import DataInput
-from bilstm_model import BiLSTM
+import tensorflow as tf
+from data.video_input import DataInput
+from model.bilstm_model import BiLSTM
 
 FLAGS = tf.app.flags.FLAGS
 
