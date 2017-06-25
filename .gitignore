@@ -89,6 +89,7 @@ ENV/
 .ropeproject
 
 summary/
-data/
 result/
 .vscode/
+*.DS_Store
+*.pyc
