@@ -3,11 +3,11 @@ from __future__ import division
 from __future__ import print_function
 
 import time
-import tensorflow as tf
 import numpy as np
-from video_input import DataInput
-from bilstm_model import BiLSTM
-import c3d_model
+import model.c3d_model
+import tensorflow as tf
+from data.video_input import DataInput
+from model.bilstm_model import BiLSTM
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -40,46 +40,46 @@ def feature_extract(config, c3d_data):
   """
   weights = {
           'wc1': _variable_with_weight_decay('wc1',
-                                             config.c3d_weights['wc1'], 0.04, 0.00),
+                                             config['c3d_weights']['wc1'], 0.04, 0.00),
           'wc2': _variable_with_weight_decay('wc2',
-                                             config.c3d_weights['wc2'], 0.04, 0.00),
+                                             config['c3d_weights']['wc2'], 0.04, 0.00),
           'wc3a': _variable_with_weight_decay('wc3a',
-                                              config.c3d_weights['wc3a'], 0.04, 0.00),
+                                              config['c3d_weights']['wc3a'], 0.04, 0.00),
           'wc3b': _variable_with_weight_decay('wc3b',
-                                              config.c3d_weights['wc3b'], 0.04, 0.00),
+                                              config['c3d_weights']['wc3b'], 0.04, 0.00),
           'wc4a': _variable_with_weight_decay('wc4a',
-                                              config.c3d_weights['wc4a'], 0.04, 0.00),
+                                              config['c3d_weights']['wc4a'], 0.04, 0.00),
           'wc4b': _variable_with_weight_decay('wc4b',
-                                              config.c3d_weights['wc4b'], 0.04, 0.00),
+                                              config['c3d_weights']['wc4b'], 0.04, 0.00),
           'wc5a': _variable_with_weight_decay('wc5a',
-                                              config.c3d_weights['wc5a'], 0.04, 0.00),
+                                              config['c3d_weights']['wc5a'], 0.04, 0.00),
           'wc5b': _variable_with_weight_decay('wc5b',
-                                              config.c3d_weights['wc5b'], 0.04, 0.00),
+                                              config['c3d_weights']['wc5b'], 0.04, 0.00),
           'wd1': _variable_with_weight_decay('wd1',
-                                             config.c3d_weights['wd1'], 0.04, 0.001),
+                                             config['c3d_weights']['wd1'], 0.04, 0.001),
           }
   biases = {
           'bc1': _variable_with_weight_decay('bc1',
-                                             config.c3d_biases['bc1'], 0.04, 0.0),
+                                             config['c3d_biases']['bc1'], 0.04, 0.0),
           'bc2': _variable_with_weight_decay('bc2',
-                                             config.c3d_biases['bc2'], 0.04, 0.0),
+                                             config['c3d_biases']['bc2'], 0.04, 0.0),
           'bc3a': _variable_with_weight_decay('bc3a',
-                                              config.c3d_biases['bc3a'], 0.04, 0.0),
+                                              config['c3d_biases']['bc3a'], 0.04, 0.0),
           'bc3b': _variable_with_weight_decay('bc3b',
-                                              config.c3d_biases['bc3b'], 0.04, 0.0),
+                                              config['c3d_biases']['bc3b'], 0.04, 0.0),
           'bc4a': _variable_with_weight_decay('bc4a',
-                                              config.c3d_biases['bc4a'], 0.04, 0.0),
+                                              config['c3d_biases']['bc4a'], 0.04, 0.0),
           'bc4b': _variable_with_weight_decay('bc4b',
-                                              config.c3d_biases['bc4b'], 0.04, 0.0),
+                                              config['c3d_biases']['bc4b'], 0.04, 0.0),
           'bc5a': _variable_with_weight_decay('bc5a',
-                                              config.c3d_biases['bc5a'], 0.04, 0.0),
+                                              config['c3d_biases']['bc5a'], 0.04, 0.0),
           'bc5b': _variable_with_weight_decay('bc5b',
-                                              config.c3d_biases['bc5b'], 0.04, 0.0),
+                                              config['c3d_biases']['bc5b'], 0.04, 0.0),
           'bd1': _variable_with_weight_decay('bd1',
-                                             config.c3d_biases['bd1'], 0.04, 0.0),
+                                             config['c3d_biases']['bd1'], 0.04, 0.0),
           }
-  output = c3d_model.inference_c3d(c3d_data, config.keep_prob, 
-                                   config.batch_size, weights, biases)
+  output = c3d_model.inference_c3d(c3d_data, config['keep_prob'], 
+                                   config['batch_size'], weights, biases)
   return output
 
 
@@ -116,19 +116,19 @@ def run_epoch(session, model, eval_op=None, verbose=False):
 
 
 def train(config, data):
-  """Video training procedure
+  """ Video training procedure
     Args:
-      config: the configuration class
+      config: the configuration dictionary 
       data: data class that implement the dataset.py interface
   """
   with tf.Graph().as_default():
-    initializer = tf.random_uniform_initializer(-config.init_scale,
-                                                config.init_scale)
+    initializer = tf.random_uniform_initializer(-config['init_scale'],
+                                                config['init_scale'])
     with tf.name_scope('Train'):
       train_input = DataInput(config=config, data=data)
       # c3d_intput: (num_steps/c3d_num_steps) * [batch_size, c3d_num_steps, height, width, channels]
       c3d_inputs = [clip for clip in tf.split(1, 
-                                              config.num_steps/config.c3d_num_steps,
+                                              config['num_steps']/config['c3d_num_steps'],
                                               train_input.input_data)]
       tf.image_summary("origin", tf.squeeze(tf.split(1, 9, c3d_inputs[0])[0]), max_images=20)
       with tf.variable_scope('Model_Var', reuse=None, initializer=initializer):
@@ -144,13 +144,13 @@ def train(config, data):
 
     sv = tf.train.Supervisor(logdir=FLAGS.save_path)
     with sv.managed_session() as session:
-      for i in range(config.max_max_epoch):
+      for i in range(config['epoch']):
         # Check if the one hot label is correct for corresponding image
         # a,b=session.run([train_input.filenames,train_input.targets])
         # print("a:{} b:{}".format(a, b))
 
-        lr_decay = config.lr_decay ** max(i - config.max_epoch, 0.0)
-        model.assign_lr(session, config.learning_rate * lr_decay)
+        lr_decay = config.lr_decay ** max(i - config['decay_begin_epoch'], 0.0)
+        model.assign_lr(session, config['learning_rate'] * lr_decay)
         print("Epoch: %d Learning rate: %.3f" %
             (i + 1, session.run(model.lr)))
         train_perplexity = run_epoch(session, model, eval_op=model.train_op,

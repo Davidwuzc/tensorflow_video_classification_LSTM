@@ -89,6 +89,5 @@ ENV/
 .ropeproject
 
 summary/
-data/
 result/
 .vscode/

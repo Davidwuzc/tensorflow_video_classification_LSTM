@@ -21,30 +21,30 @@ FLAGS = tf.app.flags.FLAGS
 
 config = {
   ''' Training parameters '''
-  epoch                      = 6
-  lr_decay                   = 0.8
-  keep_prob                  = 0.8
-  init_scale                 = 0.1 # weight initialization value (-init_scale, init_scale)
-  batch_size                 = 20
+  'epoch'                      : 6,
+  'lr_decay'                   : 0.8,
+  'keep_prob'                  : 0.8,
+  'init_scale'                 : 0.1, # weight initialization value (-init_scale, init_scale)
+  'batch_size'                 : 20,
   # (num_steps % c3d_num_steps) must equal to 0
-  c3d_num_steps              = 9
-  learning_rate              = 0.5
-  max_grad_norm              = 5
-  decay_begin_epoch          = 2
-  examples_per_shard         = 23
-  input_queue_memory_factor  = 2
+  'c3d_num_steps'              : 9,
+  'learning_rate'              : 0.5,
+  'max_grad_norm'              : 5,
+  'decay_begin_epoch'          : 2,
+  'examples_per_shard'         : 23,
+  'input_queue_memory_factor'  : 2,
   ''' Model parameters '''
-  num_layers                 = 2
+  'num_layers'                 : 2,
   # num_steps: This value must be the same as the sequence_length value
   #  inside the data/convert_to_records.py when you generate the data.
-  num_steps                  = 108
-  hidden_size                = 200
+  'num_steps'                  : 108,
+  'hidden_size'                : 200,
   ''' Image parameters '''
-  image_width                = 160
-  image_heigt                = 120
+  'image_width'                : 128,
+  'image_heigt'                : 128,
 
   # C3D model parameters
-  c3d_weights = {
+  'c3d_weights' : {
     'wc1': [3, 3, 3, 3, 7],
     'wc2': [3, 3, 3, 7, 14],
     'wc3a': [3, 3, 3, 14, 28],
@@ -54,9 +54,9 @@ config = {
     'wc5a':  [3, 3, 3, 56, 56],
     'wc5b':  [3, 3, 3, 56, 56],
     'wd1': [896, 120]
-  }
+  },
 
-  c3d_biases = {
+  'c3d_biases' : {
     'bc1': [7],
     'bc2': [14],
     'bc3a': [28],
@@ -75,16 +75,16 @@ def main(_):
 
   # Select the dataset
   train_data = None
-  if FLAGS.dataset == 'KTH'
+  if FLAGS.dataset == 'KTH':
     train_data = KTHData('train')
-  elif FLAGS.dataset == 'LCA'
+  elif FLAGS.dataset == 'LCA':
     train_data = LCAData('train')
-  elif FLAGS.dataset == 'UCF'
+  elif FLAGS.dataset == 'UCF':
     train_data = UCF101Data('train')
   
   assert train_data
   assert train_data.data_files()
-  config.num_classes = train_data.num_classes()
+  config['num_classes'] = train_data.num_classes()
 
   # Start training
   video_train.train(config, train_data)
