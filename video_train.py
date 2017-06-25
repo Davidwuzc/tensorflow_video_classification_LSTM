@@ -21,6 +21,7 @@ def run_epoch(session, model, eval_op=None, verbose=False):
     "cost": model.cost,
     "accuracy": model.accuracy
   }
+
   if eval_op is not None:
     fetches["eval_op"] = eval_op
 
@@ -43,13 +44,15 @@ def run_epoch(session, model, eval_op=None, verbose=False):
 
 def train(config, data):
   """video training procedure
-  Args:
-    config: the configuration class
-    data: data class that implement the dataset.py interface
+
+    Args:
+      config: the configuration class
+      data: data class that implement the dataset.py interface
+
   """
   with tf.Graph().as_default():
     initializer = tf.random_uniform_initializer(-config.init_scale,
-                          config.init_scale)
+                                                config.init_scale)
     with tf.name_scope('Train'):
       with tf.variable_scope('Model', reuse=None, initializer=initializer):
         train_input = DataInput(config=config, data=data)
@@ -59,19 +62,16 @@ def train(config, data):
 
     sv = tf.train.Supervisor(logdir=FLAGS.save_path)
     with sv.managed_session() as session:
-      for i in range(config.max_max_epoch):
-        # Check if the one hot label is correct for corresponding image
-        # a,b,c=session.run([train_input.filenames,train_input.labels,train_input.targets])
-        # print("a:{} b:{} c:{}".format(a, b, c))
-
-        lr_decay = config.lr_decay ** max(i - config.max_epoch, 0.0)
+      for i in range(config.epoch):
+        # Decrease the learning rate according to training epoch
+        lr_decay = config.lr_decay ** max(i - config.decay_epoch, 0.0)
         model.assign_lr(session, config.learning_rate * lr_decay)
         print("Epoch: %d Learning rate: %.3f" %
-            (i + 1, session.run(model.lr)))
+              (i + 1, session.run(model.lr)))
         train_perplexity = run_epoch(session, model, eval_op=model.train_op,
-                       verbose=True)
+                                     verbose=True)
 
       if FLAGS.save_path:
         print("Saving model to %s." % FLAGS.save_path)
         sv.saver.save(session, FLAGS.save_path,
-                global_step=sv.global_step)
+                      global_step=sv.global_step)
