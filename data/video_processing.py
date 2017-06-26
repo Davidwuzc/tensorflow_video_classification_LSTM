@@ -106,10 +106,10 @@ def video_preprocessing(image_features):
     for index in range(len(tmp_dict)):
         images.append(tmp_dict[index])
 
-       # transfer the images list into a tensor
+    # transfer the images list into a tensor
     for idx, image in enumerate(images):
         images[idx] = tf.expand_dims(image, 0)
-    result = tf.concat(0, images)
+    result = tf.concat(images, 0)
     return result
 
 
@@ -156,7 +156,7 @@ def parse_example_proto(example_serialized, num_steps):
     label = tf.cast(features['image/class/label'], dtype=tf.int32)
     # subtract the label value by 1, becuae the previous label value range
     #  from(1..n)
-    label = tf.sub(label, tf.constant(1))
+    label = tf.subtract(label, tf.constant(1))
 
     # images data in the Example proto
     image_map = {}
@@ -195,7 +195,7 @@ def batch_inputs(dataset, config, train, num_preprocess_threads=4):
       ValueError: if data is not found
     """
     with tf.name_scope('batch_processing'):
-        batch_size = config.batch_size
+        batch_size = config['batch_size']
         data_files = dataset.data_files()
         if data_files is None:
             raise ValueError('No data files found for this dataset')
@@ -221,7 +221,7 @@ def batch_inputs(dataset, config, train, num_preprocess_threads=4):
 
         # Parse a serialized Example proto to extract the video and metadata.
         image_features, label_index, text, filename = parse_example_proto(
-            example_serialized, config.num_steps)
+            example_serialized, config['num_steps'])
         video = video_preprocessing(image_features)
         videos_and_labels_and_filenames.append([video,
                                                 label_index,

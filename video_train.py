@@ -51,8 +51,8 @@ def train(config, data):
 
   """
   with tf.Graph().as_default():
-    initializer = tf.random_uniform_initializer(-config.init_scale,
-                                                config.init_scale)
+    initializer = tf.random_uniform_initializer(-config['init_scale'],
+                                                config['init_scale'])
     with tf.name_scope('Train'):
       with tf.variable_scope('Model', reuse=None, initializer=initializer):
         train_input = DataInput(config=config, data=data)
@@ -62,10 +62,10 @@ def train(config, data):
 
     sv = tf.train.Supervisor(logdir=FLAGS.save_path)
     with sv.managed_session() as session:
-      for i in range(config.epoch):
+      for i in range(config['epoch']):
         # Decrease the learning rate according to training epoch
-        lr_decay = config.lr_decay ** max(i - config.decay_epoch, 0.0)
-        model.assign_lr(session, config.learning_rate * lr_decay)
+        lr_decay = config['lr_decay'] ** max(i - config['decay_epoch'], 0.0)
+        model.assign_lr(session, config['learning_rate'] * lr_decay)
         print("Epoch: %d Learning rate: %.3f" %
               (i + 1, session.run(model.lr)))
         train_perplexity = run_epoch(session, model, eval_op=model.train_op,

@@ -20,7 +20,7 @@ def decode_jpeg(image_buffer, scope=None):
     # Note that the resulting image contains an unknown height and width
     # that is set dynamically by decode_jpeg. In other words, the height
     # and width of image is unknown at compile-time.
-    image = tf.image.decode_jpeg(image_buffer, channels=FLAGS.image_channel)
+    image = tf.image.decode_jpeg(image_buffer, channels=FLAGS.channels)
 
     # After this point, all image pixels reside in [0,1)
     # until the very end, when they're rescaled to (-1, 1).  The various
@@ -54,8 +54,8 @@ class DataInput(object):
   """The input data."""
 
   def __init__(self, config, data):
-    self.batch_size = batch_size = config.batch_size
-    self.num_steps = num_steps = config.num_steps
+    self.batch_size = batch_size = config['batch_size']
+    self.num_steps  = num_steps = config['num_steps']
     self.epoch_size = (data.num_examples_per_epoch() // batch_size) - 1
     # input_data size: [batch_size, num_steps]
     # targets size: [batch_size]
@@ -66,4 +66,4 @@ class DataInput(object):
     #  string tensor [batch_size, num_steps] =>
     #    [batch_size, num_steps, height, width, channels]
     self.input_data = tf.map_fn(decode_video, self.input_data, 
-                  dtype=tf.float32)
+                                dtype=tf.float32)

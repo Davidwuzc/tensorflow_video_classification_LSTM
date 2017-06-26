@@ -36,35 +36,35 @@ class BiLSTM(object):
 
   def _init_model(self):
     # Forward direction cell
-    lstm_fw_cell = tf.nn.rnn_cell.BasicLSTMCell(self._config.hidden_size,
+    lstm_fw_cell = tf.contrib.rnn.BasicLSTMCell(self._config['hidden_size'],
                                                 state_is_tuple=True)
-    if self._is_training and self._config.keep_prob < 1:
-      lstm_fw_cell = tf.nn.rnn_cell.DropoutWrapper(
-        lstm_fw_cell, output_keep_prob=self._config.keep_prob)
-    cell_fw = tf.nn.rnn_cell.MultiRNNCell(
-      [lstm_fw_cell]*self._config.num_layers, 
+    if self._is_training and self._config['keep_prob'] < 1:
+      lstm_fw_cell = tf.contrib.rnn.DropoutWrapper(
+        lstm_fw_cell, output_keep_prob=self._config['keep_prob'])
+    cell_fw = tf.contrib.rnn.MultiRNNCell(
+      [lstm_fw_cell]*self._config['num_layers'], 
       state_is_tuple=True)
     # Backward direction cell
-    lstm_bw_cell = tf.nn.rnn_cell.BasicLSTMCell(self._config.hidden_size,
+    lstm_bw_cell = tf.contrib.rnn.BasicLSTMCell(self._config['hidden_size'],
                                                 state_is_tuple=True) 
-    if self._is_training and self._config.keep_prob < 1:
-      lstm_bw_cell = tf.nn.rnn_cell.DropoutWrapper(
-        lstm_bw_cell, output_keep_prob=self._config.keep_prob)
-    cell_bw = tf.nn.rnn_cell.MultiRNNCell(
-      [lstm_fw_cell]*self._config.num_layers, 
+    if self._is_training and self._config['keep_prob'] < 1:
+      lstm_bw_cell = tf.contrib.rnn.DropoutWrapper(
+        lstm_bw_cell, output_keep_prob=self._config['keep_prob'])
+    cell_bw = tf.contrib.rnn.MultiRNNCell(
+      [lstm_fw_cell]*self._config['num_layers'], 
       state_is_tuple=True)
 
     inputs = self._input.input_data
-    if self._is_training and self._config.keep_prob < 1:
-      intpus = [tf.nn.dropout(single_input, self._config.keep_prob) 
+    if self._is_training and self._config['keep_prob'] < 1:
+      intpus = [tf.nn.dropout(single_input, self._config['keep_prob']) 
                     for single_input in inputs]
 
     self._outputs, _, _ = tf.nn.bidirectional_rnn(
       cell_fw, cell_bw, inputs, dtype=tf.float32)
 
-    softmax_w = tf.get_variable("softmax_w", 
-      [2*self._config.hidden_size, self._config.num_classes])
-    softmax_b = tf.get_variable("softmax_b", [self._config.num_classes])
+    softmax_w = tf.get_variable("softmax_w",
+      [2*self._config['hidden_size'], self._config['num_classes']])
+    softmax_b = tf.get_variable("softmax_b", [self._config['num_classes']])
 
     # Linear activation, using rnn inner loop last output
     #   logit shape: [batch_size, num_classes]
