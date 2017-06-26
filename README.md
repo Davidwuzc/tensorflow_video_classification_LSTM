@@ -1,22 +1,14 @@
+# Dependencies
+
+[tensorflow](https://www.tensorflow.org/api_docs/) >= 1.0
+
 # Training 
 
-## PTB
+## Step 1
 
-Steps:
+preprocess the data accroding to the `README.md` in `data_preparation` folder 
 
-1. The data required for this example is in the data/ dir of the PTB dataset from Tomas Mikolov's webpage:
-
-    ```
-    $ wget http://www.fit.vutbr.cz/~imikolov/rnnlm/simple-examples.tgz
-    $ tar xvf simple-examples.tgz
-    ```
-
-2. Run `$ python ptb_train.py --data_path=<path-to-data> --save_path=<path-to-folder>`
-
-    - the `data_path` option is the path to the ptb data folder
-    - the `save_path` option is the folder to store model/summary/checkpoint 
-
-## KTH
+## Step 2
 
 1. Run `$ python kth_train.py --data_path=<path-to-data> --save_path=<path-to-folder>`
 
@@ -25,8 +17,6 @@ Steps:
 ---
 
 For my personal reference
-
-`python ptb_train.py --data_path=/Users/dgu/Documents/projects/machine_learning/ptb_data --save_path=result`
 
 `python kth_train.py --data_path=/Users/dgu/Documents/projects/machine_learning/kth_data/sharded_data --save_path=result`
 
