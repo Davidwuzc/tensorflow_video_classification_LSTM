@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+from tensorflow.contrib import rnn
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -23,45 +24,37 @@ class BiLSTM(object):
         input, Size:[batch_size, num_classes] 
     is_training: Boolean, whether to apply a dropout layer or not
     config: configuration file
-    is_video: Boolean, whether the input is a video or not, default is
-      false
   """
 
-  def __init__(self, is_training, input_, config, is_video=False):
-    self._input  = input_
-    self._config = config
+  def __init__(self, is_training, input_, config):
+    self._input       = input_
+    self._config      = config
     self._is_training = is_training
 
     self._init_model()
 
   def _init_model(self):
-    # Forward direction cell
-    lstm_fw_cell = tf.contrib.rnn.BasicLSTMCell(self._config['hidden_size'],
-                                                state_is_tuple=True)
-    if self._is_training and self._config['keep_prob'] < 1:
-      lstm_fw_cell = tf.contrib.rnn.DropoutWrapper(
-        lstm_fw_cell, output_keep_prob=self._config['keep_prob'])
-    cell_fw = tf.contrib.rnn.MultiRNNCell(
-      [lstm_fw_cell]*self._config['num_layers'], 
-      state_is_tuple=True)
-    # Backward direction cell
-    lstm_bw_cell = tf.contrib.rnn.BasicLSTMCell(self._config['hidden_size'],
-                                                state_is_tuple=True) 
-    if self._is_training and self._config['keep_prob'] < 1:
-      lstm_bw_cell = tf.contrib.rnn.DropoutWrapper(
-        lstm_bw_cell, output_keep_prob=self._config['keep_prob'])
-    cell_bw = tf.contrib.rnn.MultiRNNCell(
-      [lstm_fw_cell]*self._config['num_layers'], 
-      state_is_tuple=True)
+    # Create multiple forward lstm cell
+    cell_fw = rnn.MultiRNNCell(
+      [rnn.BasicLSTMCell(self._config['hidden_size']) 
+        for _ in range(self._config['num_layers'])]) 
+
+    # Create multiple backward lstm cell
+    cell_bw = rnn.MultiRNNCell(
+      [rnn.BasicLSTMCell(self._config['hidden_size']) 
+        for _ in range(self._config['num_layers'])]) 
 
     inputs = self._input.input_data
+
+    # Add dropout layer to the input data 
     if self._is_training and self._config['keep_prob'] < 1:
-      intpus = [tf.nn.dropout(single_input, self._config['keep_prob']) 
+      intpus = [tf.nn.dropout(single_input, self._config['keep_prob'])
                     for single_input in inputs]
 
-    self._outputs, _, _ = tf.nn.bidirectional_rnn(
-      cell_fw, cell_bw, inputs, dtype=tf.float32)
+    self._outputs, _, _ = rnn.static_bidirectional_rnn(
+                            cell_fw, cell_bw, inputs, dtype=tf.float32)
 
+    # Hidden layer weights => 2*hidden_size because of forward + backward cells
     softmax_w = tf.get_variable("softmax_w",
       [2*self._config['hidden_size'], self._config['num_classes']])
     softmax_b = tf.get_variable("softmax_b", [self._config['num_classes']])
@@ -69,13 +62,18 @@ class BiLSTM(object):
     # Linear activation, using rnn inner loop last output
     #   logit shape: [batch_size, num_classes]
     self._logits = tf.matmul(self._outputs[-1], softmax_w) + softmax_b
+ 
+    # Define loss
     # Required targets shape: [batch_size, num_classes] (one hot vector)
     self._cost = tf.reduce_mean(
-      tf.nn.softmax_cross_entropy_with_logits(self._logits, self._input.targets))
+      tf.nn.softmax_cross_entropy_with_logits(logits=self._logits, 
+                                              labels=self._input.targets))
+    # Evaluate model
     self._correct_pred = tf.equal(tf.argmax(self._logits, 1), 
                                   tf.argmax(self._input.targets, 1))
     self.accuracy = tf.reduce_mean(tf.cast(self._correct_pred, tf.float32))
 
+    # Define optimizer
     self._lr = tf.Variable(0.0, trainable=False)
     self._train_op = tf.train.AdamOptimizer(
       learning_rate=self._lr).minimize(self._cost)

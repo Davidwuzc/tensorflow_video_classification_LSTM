@@ -5,8 +5,8 @@ from __future__ import print_function
 import os
 import tensorflow as tf
 
-from abc import abstractmethod
 from abc import ABCMeta
+from abc import abstractmethod
 
 FLAGS = tf.app.flags.FLAGS
 

@@ -3,13 +3,11 @@
   preprocessed in parallel across multiple threads. The resulting videos
   are concatenated together to form a single batch for training or 
   evaluation.
-
   -- Provide processed video data for a network:
   inputs: Construct batches of evaluation examples of videos.
   distorted_inputs: Construct batches of training examples of videos.
   batch_inputs: Construct batches of training or evaluation examples of 
     videos.
-
   -- Data processing:
   parse_example_proto: Parses an Example proto containing a training example
     of a video.
@@ -23,20 +21,59 @@ import tensorflow as tf
 FLAGS = tf.app.flags.FLAGS
 
 
+def decode_jpeg(image_buffer, scope=None):
+    """Decode a JPEG string into one 3-D float image Tensor.
+    Args:
+        image_buffer: scalar string Tensor.
+        scope: Optional scope for op_scope.
+    Returns:
+        3-D float Tensor with values ranging from [0, 1).
+    """
+    with tf.name_scope(scope, 'decode_jpeg', [image_buffer]):
+        # Decode the string as an RGB JPEG.
+        # Note that the resulting image contains an unknown height and width
+        # that is set dynamically by decode_jpeg. In other words, the height
+        # and width of image is unknown at compile-time.
+        image = tf.image.decode_jpeg(image_buffer, channels=3)
+
+        # After this point, all image pixels reside in [0,1)
+        # until the very end, when they're rescaled to (-1, 1).  The various
+        # adjust_* ops all require this range for dtype float.
+        image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+
+        # Crop the central region of the image with an area containing 87.5% of
+        # the original image.
+        image = tf.image.central_crop(image, central_fraction=0.875)
+
+        # Resize the image to the original height and width.
+        image = tf.expand_dims(image, 0)
+        image = tf.image.resize_bilinear(image, [FLAGS.image_height, FLAGS.image_width],
+                align_corners=False)
+        image = tf.squeeze(image, [0])
+    return image
+
+
+def decode_video(video_buffer):
+    """Decode list of string Tensor into list of 3-D float image Tensor.
+    Args:
+        video_buffer: tensor, shape [num_steps].
+    Returns:
+        list of 3-D float Tensor with values ranging from [0, 1).
+    """
+    # Decode the images of one video
+    return tf.map_fn(decode_jpeg, video_buffer, dtype=tf.float32)
+
+
 def inputs(dataset, config, num_preprocess_threads=4):
     """ Generate batches of videos for evaluation.
-
     Use this function as the inputs for evaluating a network.
-
     Note that some (minimal) video preprocessing occurs during evaluation
     including central cropping and resizing of the video to fit the network.
-
     Args:
       dataset: instance of Dataset class specifying the dataset.
       config: class, the configuration setting
       num_preprocess_threads: integer, total number of preprocessing threads
         defaults to 4.
-
     Returns:
       videos: 2-D string Tensor of [batch_size, num_steps] a batch of 
         video, each video is a dictionary containing strings providing 
@@ -55,19 +92,15 @@ def inputs(dataset, config, num_preprocess_threads=4):
 
 def distorted_inputs(dataset, config, num_preprocess_threads=4):
     """ Generate batches of distorted versions of videos.
-
     Use this function as the inputs for training a network.
-
     Distorting videos provides a useful technique for augmenting the data
     set during training in order to make the network invariant to aspects
     of the video that do not effect the label.
-
     Args:
       dataset: instance of Dataset class specifying the dataset.
       batch_size: integer, number of examples in batch
       num_preprocess_threads: integer, total number of preprocessing threads
         defaults to 4.
-
     Returns:
       videos: 2-D string Tensor of [batch_size, num_steps] a batch of 
         video, each video is a dictionary containing strings providing 
@@ -85,15 +118,12 @@ def distorted_inputs(dataset, config, num_preprocess_threads=4):
 
 def video_preprocessing(image_features):
     """ Transfer dictionary to tensor type
-
     Args:
       image_features: dictionary contains, Tensor tf.string containing the 
         contents of all the JPEG file of a video.
-
     Returns:
       resutl: 4-D float Tensor containing an appropriately list of scaled image
         [num_steps, encoded JPEG string]
-
     Raises:
       ValueError: if user does not provide bounding box
     """
@@ -106,7 +136,7 @@ def video_preprocessing(image_features):
     for index in range(len(tmp_dict)):
         images.append(tmp_dict[index])
 
-    # transfer the images list into a tensor
+       # transfer the images list into a tensor
     for idx, image in enumerate(images):
         images[idx] = tf.expand_dims(image, 0)
     result = tf.concat(images, 0)
@@ -115,15 +145,13 @@ def video_preprocessing(image_features):
 
 def parse_example_proto(example_serialized, num_steps):
     """ Parses an Example proto containing a training example of a video clip.
-
     The output of the convert_to_records.py video preprocessing script is a 
     dataset containing serialized Example protocol buffers. Each Example proto 
     contains the following fields:
-
       image/height: 200
       image/width: 100
       image/colorspace: 'RGB'
-      image/channels: according to the image (1 or 3)
+      image/channels: 3
       image/class/label: 2
       image/class/text: 'walking'
       image/format: 'JPEG'
@@ -131,11 +159,9 @@ def parse_example_proto(example_serialized, num_steps):
       raw/image/001: <JPEG encoded string>
       ...
       raw/image/n: <JPEG encoded string>
-
     Args:
       example_serialized: scalar Tensor tf.string containing a serialized
       Example protocol buffer.
-
     Returns:
       image_features: A dictionary containing strings providing JPEG
         encoding of all the images of a video clip.
@@ -176,21 +202,18 @@ def parse_example_proto(example_serialized, num_steps):
 def batch_inputs(dataset, config, train, num_preprocess_threads=4):
     """Contruct batches of training or evaluation examples from the video
       dataset.
-
     Args:
       dataset: instance of Dataset class specifying the dataset. See
         dataset.py for details.
       config: class, configuration
       train: boolean, shuffle the dataset or not
       num_preprocess_threads: integer, total number of preprocessing threads
-
     Returns:
       videos: 2-D string Tensor of [batch_size, num_steps] a batch of
         video, each video is a dictionary containing strings providing
         JPEG encoding of all the images of a video clip
       labels: 1-D integer Tensor of [batch_size].
       filenames: an array contains all the filenames
-
     Raises:
       ValueError: if data is not found
     """

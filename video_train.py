@@ -56,15 +56,15 @@ def train(config, data):
     with tf.name_scope('Train'):
       with tf.variable_scope('Model', reuse=None, initializer=initializer):
         train_input = DataInput(config=config, data=data)
-        model = BiLSTM(True, train_input, config, is_video=True)
-      tf.scalar_summary("Training Loss", model.cost)
-      tf.scalar_summary("Learning Rate", model.lr)
+        model = BiLSTM(True, train_input, config)
+      tf.summary.scalar("Training Loss", model.cost)
+      tf.summary.scalar("Learning Rate", model.lr)
 
     sv = tf.train.Supervisor(logdir=FLAGS.save_path)
     with sv.managed_session() as session:
       for i in range(config['epoch']):
         # Decrease the learning rate according to training epoch
-        lr_decay = config['lr_decay'] ** max(i - config['decay_epoch'], 0.0)
+        lr_decay = config['lr_decay'] ** max(i - config['decay_begin_epoch'], 0.0)
         model.assign_lr(session, config['learning_rate'] * lr_decay)
         print("Epoch: %d Learning rate: %.3f" %
               (i + 1, session.run(model.lr)))

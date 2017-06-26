@@ -1,3 +1,7 @@
+# Dependencies
+
+[tensorflow](https://www.tensorflow.org/api_docs/) >= 1.0
+
 # Data preprocessing
 
 ## Step 1 (convert.sh)

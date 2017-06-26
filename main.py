@@ -26,7 +26,6 @@ tf.app.flags.DEFINE_string("channels", 1,
 FLAGS = tf.app.flags.FLAGS
 
 config = {
-  ''' Training parameters '''
   'epoch'                      : 6,
   'lr_decay'                   : 0.8,
   'keep_prob'                  : 0.8,
@@ -37,7 +36,6 @@ config = {
   'decay_begin_epoch'          : 2,
   'examples_per_shard'         : 23,
   'input_queue_memory_factor'  : 2,
-  ''' Model parameters '''
   'num_layers'                 : 2,
   # num_steps: This value must be the same as the sequence_length value,
   #  inside the data/convert_to_records.py when you generate the data.,
